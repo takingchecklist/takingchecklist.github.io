@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checklist das Clínicas · Grupo Taking</title>
+<link rel="icon" type="image/png" href="logo_taking.png">
+<style>
+:root{--black:#000;--strip:#2A2A2A;--orange:#FF692D;--orange2:#E76937;--red:#D8342A;--ink:#1E2939;--lbl:#5B6B79;--card:#F0EEEC;--cardln:#E3E0DC;--calbg:#FFF3E0;--caltx:#B5651D;--trk:#E8E5E1}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#fff;font-family:Arial,Helvetica,sans-serif;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{min-height:100vh;display:flex;flex-direction:column}
+.mono{font-family:Consolas,'Courier New',monospace}
+.hd{background:#000;color:#fff;position:relative;padding:36px 42px 22px}
+.hd .strip{position:absolute;left:0;top:0;width:100%;height:10px;background:var(--strip)}
+.hd .line{position:absolute;left:0;top:10px;width:180px;height:5px;background:var(--orange)}
+.hd .logo{position:absolute;right:42px;top:28px;width:38px;height:auto}
+.kick{font-family:Consolas,monospace;font-size:12px;letter-spacing:.2em;color:var(--orange);text-transform:uppercase}
+.hd h1{font-size:30px;margin-top:10px;font-weight:700;letter-spacing:-.01em;padding-right:60px}
+.hd p.sub{font-size:14px;color:#B8BEC9;margin-top:8px;max-width:760px;line-height:1.45}
+.tools{margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tools .sb{flex:1;min-width:240px;max-width:460px;position:relative}
+.tools input{width:100%;height:38px;background:#161616;border:1px solid #444;border-radius:6px;color:#fff;font:14px Arial,sans-serif;padding:0 12px}
+.tools input::placeholder{color:#8A9099}
+.tools input:focus{outline:2px solid var(--orange);border-color:var(--orange)}
+.btn{height:38px;border:0;border-radius:6px;background:var(--orange);color:#000;font:700 13px Arial,sans-serif;padding:0 18px;cursor:pointer;letter-spacing:.02em}
+.btn:hover{background:#ff7d49}
+.btn.ghost{background:transparent;color:#fff;border:1px solid #555}
+.btn.ghost:hover{border-color:var(--orange);color:var(--orange)}
+.snap{margin-left:auto;font-family:Consolas,monospace;font-size:12px;color:#B8BEC9;text-align:right;line-height:1.7}
+.snap b{color:#fff}
+main{flex:1}
+.kpis{display:grid;grid-template-columns:1fr 1fr 1fr 1.1fr 1.8fr;border-bottom:1px solid var(--cardln);background:var(--card)}
+.kpi{padding:20px 18px 18px;border-right:1px solid var(--cardln);min-width:0}
+.kpi:last-child{border-right:0}
+.kpi .v{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.kpi .v.o{color:var(--orange2)}
+.kpi .v.t{font-size:20px;letter-spacing:0;padding:6px 0 2px}
+.kpi .l{font-size:11.5px;color:var(--lbl);margin-top:4px;line-height:1.4}
+.kpi .tr{height:8px;background:var(--trk);border-radius:4px;margin-top:10px;overflow:hidden}
+.blk{padding:22px 42px 26px}
+h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--orange)}
+.sub2{font-size:11.5px;color:var(--lbl);margin:3px 0 14px 17px}
+.rank{column-count:2;column-gap:48px}
+.brow{display:grid;grid-template-columns:minmax(120px,170px) 1fr 44px 52px;align-items:center;gap:10px;padding:6px 6px;border-radius:6px;font-size:12.5px;break-inside:avoid;cursor:pointer;text-decoration:none;color:inherit}
+.brow:hover,.brow:focus-visible{background:var(--card);outline:0}
+.brow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.brow .nm small{display:block;font-weight:400;font-size:10.5px;color:var(--lbl);font-family:Consolas,monospace;letter-spacing:.04em}
+.bt{height:12px;background:var(--trk);border-radius:6px;overflow:hidden;display:block}
+.bt i{display:block;height:100%;border-radius:6px;background:var(--orange)}
+.bv{text-align:right;font-family:Consolas,monospace;font-size:13px}
+.bx{text-align:right;font-family:Consolas,monospace;font-size:11px;color:var(--lbl)}
+.back{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--lbl);text-decoration:none;margin-bottom:14px;font-weight:700}
+.back:hover{color:var(--orange2)}
+.ch{background:var(--card);border:1px solid var(--cardln);border-radius:8px;padding:20px 22px;margin-bottom:16px}
+.ch .top{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.ch h2{font-size:26px;letter-spacing:-.01em}
+.ch .meta{font-size:12.5px;color:var(--lbl);margin-top:4px;line-height:1.6}
+.ch .big{font-size:44px;font-weight:700;color:var(--orange2);letter-spacing:-.02em;line-height:1;text-align:right}
+.ch .big small{display:block;font-size:12px;font-weight:400;color:var(--lbl);letter-spacing:0;margin-top:6px}
+.ch .bt{height:14px;margin-top:16px;background:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-family:Consolas,monospace;font-size:11px;letter-spacing:.06em;border:1px solid var(--cardln);background:#fff;color:var(--lbl);padding:4px 12px;border-radius:20px;text-transform:uppercase}
+.chip b{color:var(--ink)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.note{background:var(--calbg);border:1px solid var(--orange);border-radius:6px;color:var(--caltx);font-size:12.5px;line-height:1.5;padding:12px 14px}
+.note b{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:Consolas,monospace;margin-bottom:4px}
+.note.n2{background:var(--card);border-color:var(--cardln);color:var(--ink)}
+.note.n2 b{color:var(--lbl)}
+.note span{display:block;font-size:11.5px;margin-top:3px;opacity:.85}
+.list{border:1px solid var(--cardln);border-radius:8px;overflow:hidden}
+.it{display:grid;grid-template-columns:28px 34px minmax(0,1fr) auto;gap:8px;align-items:start;padding:9px 14px;border-top:1px solid var(--cardln);font-size:13px;line-height:1.45}
+.it:first-child{border-top:0}
+.it .n{font-family:Consolas,monospace;font-size:11.5px;color:var(--lbl);padding-top:1px}
+.it.ok .tx{color:var(--ink)}
+.it.pd .tx{color:var(--lbl)}
+.it .dt{font-family:Consolas,monospace;font-size:12px;color:var(--lbl);white-space:nowrap}
+.it.ok .dt{color:var(--orange2);font-weight:700}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid #C9CED6;margin-top:0;position:relative}
+.ok .dot{background:var(--orange);border-color:var(--orange)}
+.ok .dot::after{content:'';position:absolute;left:5px;top:1.5px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.na .dot{border-style:dashed}
+.tag{display:inline-block;font-family:Consolas,monospace;font-size:10px;letter-spacing:.08em;padding:2px 8px;border-radius:10px;background:var(--calbg);color:var(--caltx);border:1px solid var(--orange);margin-left:8px;text-transform:uppercase;vertical-align:1px}
+.empty{padding:60px 42px;text-align:center;color:var(--lbl);font-size:14px;line-height:1.7}
+.ft{background:#000;display:flex;justify-content:space-between;align-items:center;padding:16px 42px 18px;font-family:Consolas,monospace;font-size:10.5px;letter-spacing:.06em;color:#9AA0A8;gap:16px;flex-wrap:wrap}
+.blocks{height:8px;display:flex}
+.blocks i{flex:1;display:block}
+@media (max-width:980px){.kpis{grid-template-columns:1fr 1fr}.kpi{border-bottom:1px solid var(--cardln)}.rank{column-count:1}.g2{grid-template-columns:1fr}.snap{margin-left:0;text-align:left}}
+@media (max-width:560px){.hd,.blk{padding-left:18px;padding-right:18px}.hd .logo{right:18px}.ft{padding:14px 18px}.it{grid-template-columns:24px minmax(0,1fr);}.it .n{display:none}.it .dt{grid-column:2}}
+@media print{.tools,.back{display:none}}
+</style>
+</head>
+<body>
+<header class="hd">
+  <div class="strip"></div><div class="line"></div>
+  <img class="logo" src="logo_taking.png" alt="Taking">
+  <div class="kick">Checklist de Implantação · Infraestrutura de Rede</div>
+  <h1>Adequação de Infraestrutura · Clínicas de Diálise</h1>
+  <p class="sub">Acompanhamento das atividades de cada clínica, atualizado a partir do Excel do projeto.</p>
+  <div class="tools">
+    <div class="sb"><input id="q" list="cl" placeholder="Buscar clínica" aria-label="Buscar clínica" autocomplete="off"><datalist id="cl"></datalist></div>
+    <button class="btn" id="exp" type="button">Exportar PPT</button>
+    <div class="snap" id="snap"></div>
+  </div>
+</header>
+<main id="app"><div class="empty">Carregando…</div></main>
+<footer>
+  <div class="ft"><span id="f1">© 2026 – GRUPO TAKING · CHECKLIST DAS CLÍNICAS</span><span id="f2"></span></div>
+  <div class="blocks"><i style="background:#000"></i><i style="background:#D8342A"></i><i style="background:#FF692D"></i></div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fD = iso => iso ? iso.split('-').reverse().join('/') : '';
+const fDC = iso => iso ? iso.slice(8) + '/' + iso.slice(5, 7) : '';
+const P = v => Math.round(v * 100);
+const nf = n => Number(n).toLocaleString('pt-BR');
+const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+let D = null;
+
+function rota() {
+  const m = location.hash.match(/^#\/c\/(.+)$/);
+  return m ? D.clinicas.find(c => c.id === decodeURIComponent(m[1])) || null : null;
+}
+
+function kpiG() {
+  const g = D.geral, vz = g.concluidas === 0;
+  return `<section class="kpis">
+  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Progresso do projeto</div><div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div></div>
+  <div class="kpi"><div class="v">${nf(g.concluidas)}</div><div class="l">Tarefas concluídas de ${nf(g.aplicaveis)}</div></div>
+  <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
+  <div class="kpi"><div class="v t">${vz ? '—' : esc(g.lider.nome)}</div><div class="l">${vz ? 'Clínica com mais progresso' : 'Clínica com mais progresso · ' + P(g.lider.pct) + '% (' + g.lider.concluidas + ' de ' + g.lider.aplicaveis + ')'}</div></div>
+  <div class="kpi"><div class="v t">${g.ultima ? esc(g.ultima.texto) : '—'}</div><div class="l">${g.ultima ? 'Atividade mais recente · ' + esc(g.ultima.clinica) + ' · ' + fD(g.ultima.data) : 'Atividade mais recente · nenhuma concluída ainda'}</div></div>
+  </section>`;
+}
+
+function viewG() {
+  const cs = [...D.clinicas].sort((a, b) => b.pct - a.pct || a.nome.localeCompare(b.nome, 'pt-BR'));
+  const rows = cs.map(c => `<a class="brow" href="#/c/${encodeURIComponent(c.id)}"><span class="nm">${esc(c.nome)}<small>${esc(c.onda || '')}</small></span><span class="bt"><i style="width:${P(c.pct)}%"></i></span><span class="bv">${P(c.pct)}%</span><span class="bx">${c.concluidas}/${c.aplicaveis}</span></a>`).join('');
+  return kpiG() + `<section class="blk"><h3>Progresso por clínica</h3><div class="sub2">Ordenado por % concluído · clique numa clínica para ver o checklist dela</div><div class="rank">${rows}</div></section>`;
+}
+
+function porTipo(c) {
+  const r = {Execução: [0, 0], Evidência: [0, 0]};
+  D.atividades.forEach((a, i) => {
+    const s = c.status[i]; if (s === 'NA') return;
+    const k = a.tipo === 'Evidência' ? 'Evidência' : 'Execução';
+    r[k][1]++; if (s) r[k][0]++;
+  });
+  return r;
+}
+
+function viewC(c) {
+  const t = porTipo(c);
+  const meta = [c.cidade && c.uf ? c.cidade + ' - ' + c.uf : '', c.cadeiras ? c.cadeiras + ' cadeiras' : '', c.onda, c.escopo].filter(Boolean).map(esc).join(' · ');
+  const janela = c.inicio ? 'Janela: ' + fD(c.inicio) + (c.fim ? ' a ' + fD(c.fim) : '') : '';
+  const itens = D.atividades.map((a, i) => {
+    const s = c.status[i], k = s === 'NA' ? 'na' : s ? 'ok' : 'pd';
+    return `<div class="it ${k}"><span class="dot"></span><span class="n">${a.n}</span><span class="tx">${esc(a.texto)}${a.tipo === 'Evidência' ? '<span class="tag">Evidência</span>' : ''}</span><span class="dt">${s === 'NA' ? 'N/A' : s ? fD(s) : 'pendente'}</span></div>`;
+  }).join('');
+  return `<section class="blk"><a class="back" href="#/">← Visão geral</a>
+  <div class="ch"><div class="top"><div><h2>${esc(c.nome)}</h2><div class="meta">${meta}<br>${esc(janela)}</div></div>
+  <div class="big">${P(c.pct)}%<small>${c.concluidas} de ${c.aplicaveis} atividades</small></div></div>
+  <span class="bt"><i style="width:${P(c.pct)}%"></i></span>
+  <div class="chips"><span class="chip">Execução <b>${t.Execução[0]}/${t.Execução[1]}</b></span><span class="chip">Evidências <b>${t.Evidência[0]}/${t.Evidência[1]}</b></span></div></div>
+  <div class="g2">
+   <div class="note"><b>Última atividade executada</b>${c.ultima ? esc(c.ultima.texto) + '<span>' + fD(c.ultima.data) + '</span>' : 'Nenhuma ainda'}</div>
+   <div class="note n2"><b>Próxima pendente</b>${c.proxima ? esc(c.proxima.texto) : 'Tudo concluído'}</div>
+  </div>
+  <h3 style="margin-bottom:12px">Checklist da clínica</h3><div class="list">${itens}</div></section>`;
+}
+
+function render() {
+  if (!D) return;
+  const c = rota();
+  if (location.hash.startsWith('#/c/') && !c) { location.hash = '#/'; return; }
+  $('#app').innerHTML = c ? viewC(c) : viewG();
+  document.title = (c ? c.nome + ' · ' : '') + 'Checklist das Clínicas · Grupo Taking';
+  const g = new Date(D.gerado_em);
+  $('#snap').innerHTML = 'Atualizado em <b>' + g.toLocaleDateString('pt-BR') + ' ' + g.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}) + '</b><br>' + nf(D.geral.aplicaveis) + ' tarefas · ' + D.geral.clinicas_total + ' clínicas';
+  $('#f2').textContent = 'SNAPSHOT ' + g.toLocaleDateString('pt-BR') + ' · FONTE: ' + String(D.fonte).toUpperCase();
+  window.scrollTo(0, 0);
+}
+
+async function carregar(primeira) {
+  try {
+    const r = await fetch('dados.json?' + Date.now(), {cache: 'no-store'});
+    if (!r.ok) throw new Error(r.status);
+    const novo = await r.json();
+    const mudou = !D || novo.gerado_em !== D.gerado_em;
+    D = novo;
+    if (primeira) {
+      $('#cl').innerHTML = D.clinicas.map(c => `<option value="${esc(c.nome)}">`).join('');
+    }
+    if (mudou) { const y = window.scrollY; render(); if (!primeira) window.scrollTo(0, y); }
+  } catch (e) {
+    if (!D) $('#app').innerHTML = '<div class="empty">Não foi possível carregar o <b>dados.json</b>.<br>Abra esta página pelo servidor (servidor.py) ou rode o sync_dados.py para gerar os dados.</div>';
+  }
+}
+
+$('#q').addEventListener('change', () => {
+  if (!D) return;
+  const v = norm($('#q').value);
+  if (!v) { location.hash = '#/'; return; }
+  const c = D.clinicas.find(x => norm(x.nome) === v) || D.clinicas.find(x => norm(x.nome).includes(v));
+  if (c) location.hash = '#/c/' + encodeURIComponent(c.id);
+});
+$('#q').addEventListener('keydown', e => { if (e.key === 'Enter') $('#q').dispatchEvent(new Event('change')); });
+window.addEventListener('hashchange', () => { if (!location.hash.startsWith('#/c/')) $('#q').value = ''; render(); });
+
+async function logoB64() {
+  const b = await (await fetch('logo_taking.png')).blob();
+  return await new Promise(res => { const f = new FileReader(); f.onload = () => res(String(f.result).replace(/^data:/, '')); f.readAsDataURL(b); });
+}
+
+async function exportar() {
+  if (!D || typeof PptxGenJS === 'undefined') { alert('A biblioteca de exportação não carregou. Verifique a conexão com a internet e tente de novo.'); return; }
+  const btn = $('#exp'); const txt = btn.textContent; btn.textContent = 'Gerando…';
+  try {
+    const logo = await logoB64().catch(() => null);
+    const pptx = new PptxGenJS(); pptx.layout = 'LAYOUT_WIDE'; pptx.title = 'Checklist das Clínicas';
+    const W = 13.33, INK = '1E2939', LBL = '5B6B79', OR = 'FF692D', OR2 = 'E76937', CARD = 'F0EEEC', TRK = 'E8E5E1';
+    const g = new Date(D.gerado_em), snap = g.toLocaleDateString('pt-BR');
+    const R = (s, x, y, w, h, color, extra) => s.addShape(pptx.ShapeType.rect, Object.assign({x, y, w, h, fill: {color}, line: {color, width: 0}}, extra || {}));
+    const base = (kicker, titulo) => {
+      const s = pptx.addSlide(); s.background = {color: 'FFFFFF'};
+      R(s, 0, 0, W, 1.3, '000000'); R(s, 0, 0, W, 0.08, '2A2A2A'); R(s, 0, 0.08, 1.9, 0.045, OR);
+      s.addText(kicker.toUpperCase(), {x: 0.5, y: 0.27, w: 10, h: 0.28, fontFace: 'Consolas', fontSize: 10, color: OR, charSpacing: 3});
+      s.addText(titulo, {x: 0.5, y: 0.56, w: 11.4, h: 0.58, fontFace: 'Arial', fontSize: 24, bold: true, color: 'FFFFFF', valign: 'middle', fit: 'shrink'});
+      if (logo) s.addImage({data: logo, x: 12.45, y: 0.32, w: 0.46, h: 0.46});
+      R(s, 0, 7.1, W, 0.4, '000000');
+      s.addText('© 2026 – GRUPO TAKING · CHECKLIST DAS CLÍNICAS', {x: 0.5, y: 7.13, w: 7, h: 0.3, fontFace: 'Consolas', fontSize: 8, color: '9AA0A8'});
+      s.addText('SNAPSHOT ' + snap + ' · FONTE: ' + String(D.fonte).toUpperCase(), {x: 6.8, y: 7.13, w: 6.0, h: 0.3, fontFace: 'Consolas', fontSize: 8, color: '9AA0A8', align: 'right'});
+      R(s, 0, 7.42, W / 3, 0.08, '000000'); R(s, W / 3, 7.42, W / 3, 0.08, 'D8342A'); R(s, 2 * W / 3, 7.42, W / 3, 0.08, OR);
+      return s;
+    };
+    const kpi = (s, x, y, w, h, valor, rotulo, tam) => {
+      R(s, x, y, w, h, CARD);
+      s.addText(valor, {x: x + 0.15, y: y + 0.12, w: w - 0.3, h: h * 0.55, fontFace: 'Arial', fontSize: tam || 28, bold: true, color: OR2 === '' ? INK : INK, valign: 'middle', fit: 'shrink'});
+      s.addText(rotulo, {x: x + 0.15, y: y + h * 0.6, w: w - 0.3, h: h * 0.36, fontFace: 'Arial', fontSize: 10, color: LBL, valign: 'top'});
+    };
+    const barra = (s, x, y, w, h, p) => { R(s, x, y, w, h, TRK); if (p > 0) R(s, x, y, Math.max(w * p, 0.02), h, OR); };
+    const c = rota();
+
+    if (!c) {
+      const G = D.geral;
+      const s = base('Visão executiva', 'Checklist das Clínicas · Visão geral');
+      kpi(s, 0.5, 1.7, 2.9, 1.3, P(G.pct) + '%', 'Progresso do projeto');
+      kpi(s, 3.55, 1.7, 2.9, 1.3, nf(G.concluidas), 'Tarefas concluídas de ' + nf(G.aplicaveis));
+      kpi(s, 6.6, 1.7, 2.9, 1.3, String(G.clinicas_concluidas), 'Clínicas 100% concluídas de ' + G.clinicas_total);
+      kpi(s, 9.65, 1.7, 3.18, 1.3, G.lider ? G.lider.nome : '—', G.lider ? 'Clínica com mais progresso · ' + P(G.lider.pct) + '%' : 'Clínica com mais progresso', 18);
+      s.addText('Progresso geral', {x: 0.5, y: 3.3, w: 6, h: 0.3, fontFace: 'Arial', fontSize: 13, bold: true, color: INK});
+      barra(s, 0.5, 3.7, 12.33, 0.3, G.pct);
+      s.addText(P(G.pct) + '% das ' + nf(G.aplicaveis) + ' tarefas (' + D.atividades.length + ' atividades × ' + G.clinicas_total + ' clínicas)', {x: 0.5, y: 4.08, w: 12, h: 0.3, fontFace: 'Arial', fontSize: 10, color: LBL});
+      R(s, 0.5, 4.7, 12.33, 1.5, 'FFF3E0', {line: {color: OR, width: 1}});
+      s.addText('ATIVIDADE MAIS RECENTE EXECUTADA', {x: 0.75, y: 4.85, w: 9, h: 0.3, fontFace: 'Consolas', fontSize: 10, color: 'B5651D', charSpacing: 2});
+      s.addText(G.ultima ? G.ultima.texto : 'Nenhuma atividade concluída ainda', {x: 0.75, y: 5.2, w: 11.8, h: 0.5, fontFace: 'Arial', fontSize: 16, bold: true, color: INK, valign: 'middle', fit: 'shrink'});
+      s.addText(G.ultima ? G.ultima.clinica + ' · ' + fD(G.ultima.data) : '', {x: 0.75, y: 5.72, w: 11.8, h: 0.3, fontFace: 'Arial', fontSize: 11, color: 'B5651D'});
+
+      const cs = [...D.clinicas].sort((a, b) => b.pct - a.pct || a.nome.localeCompare(b.nome, 'pt-BR'));
+      const por = 16;
+      for (let p = 0; p < cs.length; p += por) {
+        const fatia = cs.slice(p, p + por);
+        const t = base('Progresso por clínica', 'Progresso por clínica · ' + (p / por + 1) + '/' + Math.ceil(cs.length / por));
+        fatia.forEach((k, i) => {
+          const y = 1.55 + i * 0.34;
+          t.addText(k.nome, {x: 0.5, y, w: 3.0, h: 0.3, fontFace: 'Arial', fontSize: 10.5, bold: true, color: INK, valign: 'middle', fit: 'shrink'});
+          t.addText(k.onda || '', {x: 3.5, y, w: 1.2, h: 0.3, fontFace: 'Consolas', fontSize: 8, color: LBL, valign: 'middle'});
+          barra(t, 4.8, y + 0.07, 6.6, 0.16, k.pct);
+          t.addText(P(k.pct) + '%', {x: 11.5, y, w: 0.7, h: 0.3, fontFace: 'Consolas', fontSize: 10.5, color: INK, align: 'right', valign: 'middle'});
+          t.addText(k.concluidas + '/' + k.aplicaveis, {x: 12.2, y, w: 0.7, h: 0.3, fontFace: 'Consolas', fontSize: 8.5, color: LBL, align: 'right', valign: 'middle'});
+        });
+      }
+      await pptx.writeFile({fileName: 'Checklist_Clinicas_Visao_Geral_' + g.toISOString().slice(0, 10) + '.pptx'});
+    } else {
+      const meta = [c.cidade && c.uf ? c.cidade + ' - ' + c.uf : '', c.cadeiras ? c.cadeiras + ' cadeiras' : '', c.onda].filter(Boolean).join(' · ');
+      const t = porTipo(c);
+      const s = base('Checklist da clínica', c.nome);
+      s.addText(meta + (c.inicio ? ' · Janela ' + fD(c.inicio) + (c.fim ? ' a ' + fD(c.fim) : '') : ''), {x: 0.5, y: 1.5, w: 12.3, h: 0.35, fontFace: 'Arial', fontSize: 12, color: LBL});
+      kpi(s, 0.5, 2.0, 3.0, 1.3, P(c.pct) + '%', c.concluidas + ' de ' + c.aplicaveis + ' atividades concluídas');
+      kpi(s, 3.65, 2.0, 3.0, 1.3, t.Execução[0] + '/' + t.Execução[1], 'Atividades de execução');
+      kpi(s, 6.8, 2.0, 3.0, 1.3, t.Evidência[0] + '/' + t.Evidência[1], 'Evidências (antes e depois)');
+      kpi(s, 9.95, 2.0, 2.88, 1.3, c.proxima ? 'nº ' + c.proxima.n : '—', c.proxima ? 'Próxima pendente' : 'Tudo concluído', 28);
+      barra(s, 0.5, 3.6, 12.33, 0.28, c.pct);
+      R(s, 0.5, 4.2, 6.05, 1.55, 'FFF3E0', {line: {color: OR, width: 1}});
+      s.addText('ÚLTIMA ATIVIDADE EXECUTADA', {x: 0.7, y: 4.32, w: 5.7, h: 0.28, fontFace: 'Consolas', fontSize: 9, color: 'B5651D', charSpacing: 2});
+      s.addText(c.ultima ? c.ultima.texto : 'Nenhuma ainda', {x: 0.7, y: 4.62, w: 5.7, h: 0.75, fontFace: 'Arial', fontSize: 13, bold: true, color: INK, valign: 'top', fit: 'shrink'});
+      s.addText(c.ultima ? fD(c.ultima.data) : '', {x: 0.7, y: 5.38, w: 5.7, h: 0.28, fontFace: 'Arial', fontSize: 10, color: 'B5651D'});
+      R(s, 6.78, 4.2, 6.05, 1.55, CARD, {line: {color: 'E3E0DC', width: 1}});
+      s.addText('PRÓXIMA PENDENTE', {x: 6.98, y: 4.32, w: 5.7, h: 0.28, fontFace: 'Consolas', fontSize: 9, color: LBL, charSpacing: 2});
+      s.addText(c.proxima ? c.proxima.texto : 'Tudo concluído', {x: 6.98, y: 4.62, w: 5.7, h: 0.95, fontFace: 'Arial', fontSize: 13, bold: true, color: INK, valign: 'top', fit: 'shrink'});
+
+      const por = 18;
+      for (let p = 0; p < D.atividades.length; p += por) {
+        const fatia = D.atividades.slice(p, p + por);
+        const l = base(c.nome, 'Checklist · atividades ' + fatia[0].n + ' a ' + fatia[fatia.length - 1].n);
+        fatia.forEach((a, j) => {
+          const st = c.status[p + j], y = 1.5 + j * 0.31;
+          l.addText(st === 'NA' ? '◌' : st ? '●' : '○', {x: 0.5, y, w: 0.35, h: 0.28, fontFace: 'Arial', fontSize: 11, color: st && st !== 'NA' ? OR : 'AAB0BA', valign: 'middle'});
+          l.addText(String(a.n), {x: 0.85, y, w: 0.45, h: 0.28, fontFace: 'Consolas', fontSize: 9, color: LBL, valign: 'middle'});
+          l.addText(a.texto + (a.tipo === 'Evidência' ? '  [evidência]' : ''), {x: 1.3, y, w: 9.9, h: 0.28, fontFace: 'Arial', fontSize: 9.5, color: st && st !== 'NA' ? INK : LBL, valign: 'middle', fit: 'shrink'});
+          l.addText(st === 'NA' ? 'N/A' : st ? fD(st) : 'pendente', {x: 11.3, y, w: 1.5, h: 0.28, fontFace: 'Consolas', fontSize: 9.5, bold: !!st && st !== 'NA', color: st && st !== 'NA' ? OR2 : LBL, align: 'right', valign: 'middle'});
+        });
+      }
+      await pptx.writeFile({fileName: 'Checklist_' + c.id + '_' + g.toISOString().slice(0, 10) + '.pptx'});
+    }
+  } catch (e) {
+    console.error(e); alert('Não foi possível gerar o PPT: ' + e.message);
+  } finally { btn.textContent = txt; }
+}
+$('#exp').addEventListener('click', exportar);
+
+carregar(true);
+setInterval(() => carregar(false), 60000);
+</script>
+</body>
+</html>

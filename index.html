@@ -42,7 +42,7 @@ main{flex:1}
 h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
 h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--orange)}
 .sub2{font-size:11.5px;color:var(--lbl);margin:3px 0 14px 17px}
-.rank{column-count:2;column-gap:48px}
+.rank{display:grid;grid-auto-flow:column;grid-template-columns:1fr 1fr;grid-template-rows:repeat(var(--rows,16),auto);column-gap:48px}
 .brow{display:grid;grid-template-columns:minmax(120px,170px) 1fr 44px 52px;align-items:center;gap:10px;padding:6px 6px;border-radius:6px;font-size:12.5px;break-inside:avoid;cursor:pointer;text-decoration:none;color:inherit}
 .brow:hover,.brow:focus-visible{background:var(--card);outline:0}
 .brow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
@@ -97,7 +97,7 @@ h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--or
 .ft{background:#000;display:flex;justify-content:space-between;align-items:center;padding:16px 42px 18px;font-family:Consolas,monospace;font-size:10.5px;letter-spacing:.06em;color:#9AA0A8;gap:16px;flex-wrap:wrap}
 .blocks{height:8px;display:flex}
 .blocks i{flex:1;display:block}
-@media (max-width:980px){body:not(.pdf) .kpis{grid-template-columns:1fr 1fr}body:not(.pdf) .kpi{border-bottom:1px solid var(--cardln)}body:not(.pdf) .rank{column-count:1}body:not(.pdf) .g2{grid-template-columns:1fr}body:not(.pdf) .snap{margin-left:0;text-align:left}}
+@media (max-width:980px){body:not(.pdf) .kpis{grid-template-columns:1fr 1fr}body:not(.pdf) .kpi{border-bottom:1px solid var(--cardln)}body:not(.pdf) .rank{grid-auto-flow:row;grid-template-columns:1fr;grid-template-rows:none}body:not(.pdf) .g2{grid-template-columns:1fr}body:not(.pdf) .snap{margin-left:0;text-align:left}}
 @media (max-width:560px){body:not(.pdf) .hd,body:not(.pdf) .blk{padding-left:18px;padding-right:18px}body:not(.pdf) .hd .logo{right:18px}body:not(.pdf) .ft{padding:14px 18px}body:not(.pdf) .it{grid-template-columns:24px minmax(0,1fr)}body:not(.pdf) .it .n{display:none}body:not(.pdf) .it .dt{grid-column:2}}
 body.pdf{width:1417px;min-height:0;display:block}
 body.pdf .tools .sb,body.pdf .tools .btn,body.pdf .back,body.pdf .lnk{display:none}
@@ -113,7 +113,7 @@ body.pdf .onda,body.pdf .brow{cursor:default}
   <p class="sub">Acompanhamento das atividades de cada clínica, atualizado a partir do Excel do projeto.</p>
   <div class="tools">
     <div class="sb"><input id="q" list="cl" placeholder="Buscar clínica" aria-label="Buscar clínica" autocomplete="off"><datalist id="cl"></datalist></div>
-    <button class="btn" id="exp" type="button" title="Abre a impressão: escolha Salvar como PDF">Exportar PDF</button>
+    <button class="btn" id="exp" type="button" title="Baixa o PDF da tela atual">Exportar PDF</button>
     <div class="snap" id="snap"></div>
   </div>
 </header>
@@ -123,6 +123,8 @@ body.pdf .onda,body.pdf .brow{cursor:default}
   <div class="blocks"><i style="background:#000"></i><i style="background:#D8342A"></i><i style="background:#FF692D"></i></div>
 </footer>
 
+<script src="html2canvas.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -172,7 +174,7 @@ function viewG() {
   const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div><span class="bt"><i style="width:${P(o.pct)}%"></i></span><div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} tarefas</div><div class="pz">${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
   const limpar = filtroOnda ? `<button type="button" class="lnk" onclick="filtrarOnda(${os.findIndex(o => o.nome === filtroOnda)})">ver todas as ondas</button>` : '';
   return kpiG() + `<section class="blk" style="padding-bottom:6px"><h3>Progresso por onda</h3><div class="sub2">Clique numa onda para filtrar as clínicas abaixo</div><div class="ondas">${cards}</div></section>`
-    + `<section class="blk"><h3>Progresso por clínica${filtroOnda ? ' · ' + esc(filtroOnda) : ''}${limpar}</h3><div class="sub2">Ordenado por % concluído · clique numa clínica para ver o checklist dela</div><div class="rank">${rows}</div></section>`;
+    + `<section class="blk"><h3>Progresso por clínica${filtroOnda ? ' · ' + esc(filtroOnda) : ''}${limpar}</h3><div class="sub2">Ordenado por % concluído · clique numa clínica para ver o checklist dela</div><div class="rank" style="--rows:${Math.ceil(cs.length / 2)}">${rows}</div></section>`;
 }
 
 function porTipo(c) {
@@ -228,7 +230,6 @@ async function carregar(primeira) {
       $('#cl').innerHTML = D.clinicas.map(c => `<option value="${esc(c.nome)}">`).join('');
     }
     if (mudou) { const y = window.scrollY; render(); if (!primeira) window.scrollTo(0, y); }
-    if (primeira && /[?&]pdf=1/.test(location.search)) prepararPdf();
   } catch (e) {
     if (!D) $('#app').innerHTML = '<div class="empty">Não foi possível carregar o <b>dados.json</b>.<br>Abra esta página pelo servidor (servidor.py) ou rode o sync_dados.py para gerar os dados.</div>';
   }
@@ -244,29 +245,24 @@ $('#q').addEventListener('change', () => {
 $('#q').addEventListener('keydown', e => { if (e.key === 'Enter') $('#q').dispatchEvent(new Event('change')); });
 window.addEventListener('hashchange', () => { if (!location.hash.startsWith('#/c/')) $('#q').value = ''; render(); });
 
-function modoPdf(on, h) {
-  document.body.classList.toggle('pdf', on);
-  const velho = document.getElementById('pgst'); if (velho) velho.remove();
-  if (on && h) {
-    const st = document.createElement('style'); st.id = 'pgst';
-    st.textContent = '@page{size:1417px ' + h + 'px;margin:0}html,body{width:1417px;height:' + h + 'px;overflow:hidden}';
-    document.head.appendChild(st);
-  }
-}
-function prepararPdf() {
-  modoPdf(true);
-  const h = Math.ceil(document.body.scrollHeight) + 4;
-  modoPdf(true, h);
-  return h;
-}
-function exportar() {
+async function exportar() {
   if (!D) return;
-  const c = rota(), antes = document.title, y = window.scrollY, hoje = new Date().toISOString().slice(0, 10);
-  document.title = c ? 'Checklist_' + c.id + '_' + hoje : 'Checklist_Clinicas_Visao_Geral_' + hoje;
-  prepararPdf();
-  const fim = () => { window.removeEventListener('afterprint', fim); modoPdf(false); document.title = antes; window.scrollTo(0, y); };
-  window.addEventListener('afterprint', fim);
-  setTimeout(() => window.print(), 60);
+  if (typeof html2canvas === 'undefined' || !window.jspdf) { alert('Não foi possível carregar o gerador de PDF. Recarregue a página (Ctrl+F5) e tente de novo.'); return; }
+  const btn = $('#exp'), txt = btn.textContent, c = rota(), hoje = new Date().toISOString().slice(0, 10);
+  btn.textContent = 'Gerando PDF…';
+  try {
+    await new Promise(r => setTimeout(r, 30));
+    const cv = await html2canvas(document.body, {
+      scale: 2, windowWidth: 1417, backgroundColor: '#ffffff', useCORS: true, logging: false,
+      onclone: doc => doc.body.classList.add('pdf')
+    });
+    const W = 1417, H = Math.round(cv.height / cv.width * W);
+    const pdf = new window.jspdf.jsPDF({orientation: W > H ? 'l' : 'p', unit: 'px', format: [W, H], hotfixes: ['px_scaling'], compress: true});
+    pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, W, H);
+    pdf.save((c ? 'Checklist_' + c.id : 'Checklist_Clinicas_Visao_Geral') + '_' + hoje + '.pdf');
+  } catch (e) {
+    console.error(e); alert('Não foi possível gerar o PDF: ' + e.message);
+  } finally { btn.textContent = txt; }
 }
 $('#exp').addEventListener('click', exportar);
 

@@ -171,12 +171,15 @@ function rota() {
 
 function kpiG() {
   const g = D.geral, vz = g.concluidas === 0, e = esp(D.clinicas);
+  // clínica mais atrasada = maior distância entre o esperado da semana e o realizado
+  const atr = D.clinicas.map(c => ({c, e: espC(c)})).filter(x => x.e !== null && x.e > x.c.pct)
+    .sort((a, b) => (b.e - b.c.pct) - (a.e - a.c.pct) || a.c.nome.localeCompare(b.c.nome, 'pt-BR'))[0];
   return `<section class="kpis">
   <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado da semana ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e).replace('class="bt dual"', 'class="bt dual" style="height:8px"')}</div>`}</div>
   <div class="kpi"><div class="v">${nf(g.concluidas)}</div><div class="l">Atividades concluídas de ${nf(g.aplicaveis)}</div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
   <div class="kpi"><div class="v t">${vz ? '—' : esc(g.lider.nome)}</div><div class="l">${vz ? 'Clínica com mais evolução' : 'Clínica com mais evolução · ' + P(g.lider.pct) + '% (' + g.lider.concluidas + ' de ' + g.lider.aplicaveis + ')'}</div></div>
-  <div class="kpi"><div class="v t">${g.ultima ? esc(g.ultima.texto) : '—'}</div><div class="l">${g.ultima ? 'Atividade mais recente · ' + esc(g.ultima.clinica) + ' · ' + fD(g.ultima.data) : 'Atividade mais recente · nenhuma concluída ainda'}</div></div>
+  <div class="kpi"><div class="v t">${atr ? esc(atr.c.nome) : '—'}</div><div class="l">${atr ? 'Clínica mais atrasada · realizado ' + P(atr.c.pct) + '% x esperado ' + P(atr.e) + '%' : (e === null ? 'Clínica mais atrasada · cronograma ainda não preenchido' : 'Nenhuma clínica atrasada em relação ao cronograma')}</div></div>
   </section>`;
 }
 

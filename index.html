@@ -55,6 +55,7 @@ h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--or
 .bt.dual i.r{background:var(--orange)}
 .bt.dual b{position:absolute;top:0;height:100%;width:3px;background:var(--ink);box-shadow:0 0 0 1px #fff}
 .lg i.e{background:var(--ink)}
+.pv{font-family:Consolas,monospace;font-size:11px;color:var(--lbl);margin-left:12px;white-space:nowrap}
 .lg{font-size:11.5px;color:var(--lbl);margin-left:14px;white-space:nowrap}
 .lg i{display:inline-block;width:18px;height:6px;border-radius:3px;background:var(--orange);margin-right:5px;vertical-align:middle}
 .bv{text-align:right;font-family:Consolas,monospace;font-size:13px}
@@ -223,7 +224,7 @@ function viewC(c) {
   const janela = [c.inicio ? 'Início: ' + fD(c.inicio) : '', c.fim ? 'Prazo: ' + fD(c.fim) : ''].filter(Boolean).join(' · ');
   const itens = D.atividades.map((a, i) => {
     const s = c.status[i], k = s === 'NA' ? 'na' : s ? 'ok' : 'pd';
-    return `<div class="it ${k}"><span class="dot"></span><span class="n">${a.n}</span><span class="tx">${esc(a.texto)}${a.tipo === 'Evidência' ? '<span class="tag">Evidência</span>' : ''}</span><span class="dt">${s === 'NA' ? 'N/A' : s ? fD(s) : 'pendente'}</span></div>`;
+    return `<div class="it ${k}"><span class="dot"></span><span class="n">${a.n}</span><span class="tx">${esc(a.texto)}${a.tipo === 'Evidência' ? '<span class="tag">Evidência</span>' : ''}${c.previsto && c.previsto[i] ? '<span class="pv">Data prevista: ' + fD(c.previsto[i]) + '</span>' : ''}</span><span class="dt">${s === 'NA' ? 'N/A' : s ? fD(s) : 'pendente'}</span></div>`;
   }).join('');
   return `<section class="blk"><a class="back" href="#/">← Visão geral</a>
   <div class="ch"><div class="top"><div><h2>${esc(c.nome)}</h2><div class="meta">${meta}<br>${esc(janela)}</div></div>

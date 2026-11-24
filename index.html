@@ -143,8 +143,8 @@ function rota() {
 function kpiG() {
   const g = D.geral, vz = g.concluidas === 0;
   return `<section class="kpis">
-  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Progresso do projeto</div><div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div></div>
-  <div class="kpi"><div class="v">${nf(g.concluidas)}</div><div class="l">Tarefas concluídas de ${nf(g.aplicaveis)}</div></div>
+  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto</div><div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div></div>
+  <div class="kpi"><div class="v">${nf(g.concluidas)}</div><div class="l">Atividades concluídas de${nf(g.aplicaveis)}</div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
   <div class="kpi"><div class="v t">${vz ? '—' : esc(g.lider.nome)}</div><div class="l">${vz ? 'Clínica com mais progresso' : 'Clínica com mais progresso · ' + P(g.lider.pct) + '% (' + g.lider.concluidas + ' de ' + g.lider.aplicaveis + ')'}</div></div>
   <div class="kpi"><div class="v t">${g.ultima ? esc(g.ultima.texto) : '—'}</div><div class="l">${g.ultima ? 'Atividade mais recente · ' + esc(g.ultima.clinica) + ' · ' + fD(g.ultima.data) : 'Atividade mais recente · nenhuma concluída ainda'}</div></div>
@@ -174,7 +174,7 @@ function viewG() {
   const os = ondas();
   const cs = [...D.clinicas].filter(c => !filtroOnda || (c.onda || 'Sem onda') === filtroOnda).sort((a, b) => b.pct - a.pct || a.nome.localeCompare(b.nome, 'pt-BR'));
   const rows = cs.map(c => `<a class="brow" href="#/c/${encodeURIComponent(c.id)}"><span class="nm">${esc(c.nome)}<small>${esc(c.onda || '')}</small></span><span class="bt"><i style="width:${P(c.pct)}%"></i></span><span class="bv">${P(c.pct)}%</span><span class="bx">${c.concluidas}/${c.aplicaveis}</span></a>`).join('');
-  const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div><span class="bt"><i style="width:${P(o.pct)}%"></i></span><div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} tarefas</div><div class="pz">${o.inicio ? 'Início: ' + fD(o.inicio) + ' · ' : ''}${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
+  const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div><span class="bt"><i style="width:${P(o.pct)}%"></i></span><div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} atividades</div><div class="pz">${o.inicio ? 'Início: ' + fD(o.inicio) + ' · ' : ''}${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
   const limpar = filtroOnda ? `<button type="button" class="lnk" onclick="filtrarOnda(${os.findIndex(o => o.nome === filtroOnda)})">ver todas as ondas</button>` : '';
   return kpiG() + `<section class="blk" style="padding-bottom:6px"><h3>Progresso por onda</h3><div class="sub2">Clique numa onda para filtrar as clínicas abaixo</div><div class="ondas">${cards}</div></section>`
     + `<section class="blk"><h3>Progresso por clínica${filtroOnda ? ' · ' + esc(filtroOnda) : ''}${limpar}</h3><div class="sub2">Ordenado por % concluído · clique numa clínica para ver o checklist dela</div><div class="rank" style="--rows:${Math.ceil(cs.length / 2)}">${rows}</div></section>`;
@@ -217,7 +217,7 @@ function render() {
   $('#app').innerHTML = c ? viewC(c) : viewG();
   document.title = (c ? c.nome + ' · ' : '') + 'Checklist das Clínicas · Grupo Taking';
   const g = new Date(D.gerado_em);
-  $('#snap').innerHTML = 'Atualizado em <b>' + g.toLocaleDateString('pt-BR') + ' ' + g.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}) + '</b><br>' + nf(D.geral.aplicaveis) + ' tarefas · ' + D.geral.clinicas_total + ' clínicas';
+  $('#snap').innerHTML = 'Atualizado em <b>' + g.toLocaleDateString('pt-BR') + ' ' + g.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}) + '</b><br>' + nf(D.geral.aplicaveis) + ' atividades · ' + D.geral.clinicas_total + ' clínicas';
   $('#f2').textContent = 'SNAPSHOT ' + g.toLocaleDateString('pt-BR') + ' · FONTE: ' + String(D.fonte).toUpperCase();
   window.scrollTo(0, 0);
 }

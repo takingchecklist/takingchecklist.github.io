@@ -39,7 +39,12 @@ main{flex:1}
 .kpi .l{font-size:11.5px;color:var(--lbl);margin-top:4px;line-height:1.4}
 .kpi .tr{height:8px;background:var(--trk);border-radius:4px;margin-top:10px;overflow:hidden}
 .kpi.fase .arrows{display:flex}
-.ar{flex:1;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin-right:-5px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%);padding:0 6px}
+.fs{flex:1;min-width:0;margin-right:-5px}
+.wks{display:flex;gap:3px;margin:5px 9px 0 0}
+.wk{flex:1;height:10px;border-radius:2px;border:1px solid #C9CED6;background:#fff}
+.wk.late{border-color:var(--red)}
+.kpi.fase .nt{font-size:10.5px;color:var(--lbl);margin-top:6px;line-height:1.35}
+.ar{width:100%;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin-right:-5px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%);padding:0 6px}
 .ar.f{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%);border-radius:5px 0 0 5px}
 .ar.done{background:var(--verde);color:#fff}
 .ar.cur{background:var(--orange);color:#fff}
@@ -215,16 +220,49 @@ function ultimasTarefas() {
   return {data: ult, n: datas.filter(d => d === ult).length, sem: datas.filter(d => d >= ini).length};
 }
 
+function addDias(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return isoDia(d); }
+// Blocos de uma semana de cada onda: a tarefa entra no bloco da DATA PREVISTA e o bloco enche conforme as tarefas
+// ganham a data real de execução. Semana vencida (fim < hoje) com pendência fica com borda vermelha.
+function semanasOnda(o) {
+  if (!o.inicio) return [];
+  const hoje = isoDia(new Date()), blocos = [];
+  o.cs.forEach(c => {
+    if (!c.previsto) return;
+    D.atividades.forEach((_, i) => {
+      const p = c.previsto[i], s = c.status[i];
+      if (!p || s === 'NA') return;
+      let w = Math.floor((new Date(p + 'T00:00:00') - new Date(o.inicio + 'T00:00:00')) / 864e5 / 7);
+      if (w < 0) w = 0;
+      (blocos[w] = blocos[w] || {t: 0, x: 0}).t++;
+      if (s) blocos[w].x++;
+    });
+  });
+  return Array.from(blocos, (b, w) => {
+    b = b || {t: 0, x: 0};
+    const de = addDias(o.inicio, 7 * w), ate = addDias(o.inicio, 7 * w + 6);
+    return {...b, de, ate, vencida: ate < hoje};
+  });
+}
+function blocosHtml(o) {
+  const bl = semanasOnda(o);
+  if (!bl.length) return '';
+  return '<div class="wks">' + bl.map((b, w) => {
+    const pct = b.t ? Math.round(b.x / b.t * 100) : 0;
+    const tip = `Semana ${w + 1} (${fDC(b.de)} a ${fDC(b.ate)}): ${b.x} de ${b.t} tarefas concluídas`;
+    return `<span class="wk${b.vencida && b.x < b.t ? ' late' : ''}" title="${esc(tip)}" style="background:linear-gradient(to top,var(--verde) ${pct}%,#fff ${pct}%)"></span>`;
+  }).join('') + '</div>';
+}
+
 function kpiG() {
   const g = D.geral, e = esp(D.clinicas);
   // fase do projeto: uma seta por onda; a atual é a primeira que ainda não terminou (ao acabar uma, passa para a seguinte)
   const nos = ondas().filter(o => /^\d/.test(o.nome) && o.ap > 0).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', {numeric: true}));
   const oa = nos.find(o => o.conc < o.ap) || nos[nos.length - 1] || null;
-  const setas = nos.map((o, i) => `<span class="ar ${o.conc >= o.ap ? 'done' : (o === oa ? 'cur' : 'fut')}${i === 0 ? ' f' : ''}" title="${esc(o.nome)}">${i + 1}</span>`).join('');
+  const setas = nos.map((o, i) => `<div class="fs"><span class="ar ${o.conc >= o.ap ? 'done' : (o === oa ? 'cur' : 'fut')}${i === 0 ? ' f' : ''}" title="${esc(o.nome)}">${i + 1}</span>${blocosHtml(o)}</div>`).join('');
   const sem = tarefasSemana(), ult = ultimasTarefas(), temCrono = D.clinicas.some(c => c.previsto);
   return `<section class="kpis">
   <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado da semana ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e).replace('class="bt dual"', 'class="bt dual" style="height:8px"')}</div>`}</div>
-  <div class="kpi fase"><div class="l" style="margin:0 0 8px">Fase do projeto${oa ? ' · ' + esc(oa.nome) : ''}</div><div class="arrows">${setas}</div><div class="pr"><div><small>Prev.</small><b>${oa && oa.esp !== null ? P(oa.esp) + '%' : '—'}</b></div><div><small>Real</small><b>${oa ? P(oa.pct) + '%' : '—'}</b></div></div></div>
+  <div class="kpi fase"><div class="l" style="margin:0 0 8px">Fase do projeto${oa ? ' · ' + esc(oa.nome) : ''}</div><div class="arrows">${setas}</div><div class="nt">Cada bloco é uma semana (data prevista); enche com a data real de execução. Borda vermelha: semana vencida com pendência.</div><div class="pr"><div><small>Prev.</small><b>${oa && oa.esp !== null ? P(oa.esp) + '%' : '—'}</b></div><div><small>Real</small><b>${oa ? P(oa.pct) + '%' : '—'}</b></div></div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
   <div class="kpi"><div class="v">${temCrono ? nf(sem.t) : '—'}</div><div class="l">${temCrono ? 'Próximas tarefas agendadas · ' + nf(sem.x) + ' executadas de ' + nf(sem.t) + ' · até ' + fDC(sem.fim) : 'Próximas tarefas agendadas · cronograma ainda não preenchido'}</div></div>
   <div class="kpi"><div class="v">${ult ? nf(ult.n) : '—'}</div><div class="l">${ult ? 'Últimas tarefas executadas · ' + fD(ult.data) + ' · ' + nf(ult.sem) + ' nos últimos 7 dias' : 'Últimas tarefas · nenhuma executada ainda'}</div></div>

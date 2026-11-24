@@ -49,13 +49,12 @@ h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--or
 .brow .nm small{display:block;font-weight:400;font-size:10.5px;color:var(--lbl);font-family:Consolas,monospace;letter-spacing:.04em}
 .bt{height:12px;background:var(--trk);border-radius:6px;overflow:hidden;display:block}
 .bt i{display:block;height:100%;border-radius:6px;background:var(--orange)}
-.bt.dual,.onda .bt.dual,.ch .bt.dual{height:auto;background:none;overflow:visible;display:flex;flex-direction:column;gap:2px;--h:12px}
-.onda .bt.dual{--h:14px;margin:8px 0}
-.ch .bt.dual{--h:16px;margin-top:16px}
-.bt.dual .tk{display:block;height:calc((var(--h) - 2px) / 2);background:var(--trk);border-radius:4px;overflow:hidden}
-.onda .bt.dual .tk,.ch .bt.dual .tk{background:#fff}
-.bt.dual .tk i{border-radius:4px}
-.bt.dual .tk i.e,.lg i.e{background:var(--ink)}
+.bt.dual{position:relative}
+.bt.dual i{position:absolute;left:0;top:0;height:100%;display:block;border-radius:6px}
+.bt.dual i.e{background:var(--ink);opacity:.85}
+.bt.dual i.r{background:var(--orange)}
+.bt.dual b{position:absolute;top:0;height:100%;width:3px;background:var(--ink);box-shadow:0 0 0 1px #fff}
+.lg i.e{background:var(--ink)}
 .lg{font-size:11.5px;color:var(--lbl);margin-left:14px;white-space:nowrap}
 .lg i{display:inline-block;width:18px;height:6px;border-radius:3px;background:var(--orange);margin-right:5px;vertical-align:middle}
 .bv{text-align:right;font-family:Consolas,monospace;font-size:13px}
@@ -161,7 +160,7 @@ function esp(cs) {
 function espC(c) { const n = espN(c); return n === null ? null : (c.aplicaveis ? n / c.aplicaveis : 0); }
 function barra(real, e) {
   if (e === null) return `<span class="bt"><i style="width:${P(real)}%"></i></span>`;
-  return `<span class="bt dual" title="Realizado ${P(real)}% · Esperado ${P(e)}%"><span class="tk"><i class="r" style="width:${P(real)}%"></i></span><span class="tk"><i class="e" style="width:${P(e)}%"></i></span></span>`;
+  return `<span class="bt dual" title="Realizado ${P(real)}% · Esperado ${P(e)}%"><i class="e" style="width:${P(e)}%"></i><i class="r" style="width:${P(real)}%"></i><b style="left:calc(${P(e)}% - 1.5px)"></b></span>`;
 }
 
 function rota() {
@@ -172,7 +171,7 @@ function rota() {
 function kpiG() {
   const g = D.geral, vz = g.concluidas === 0, e = esp(D.clinicas);
   return `<section class="kpis">
-  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado hoje ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e)}</div>`}</div>
+  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado hoje ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e).replace('class="bt dual"', 'class="bt dual" style="height:8px"')}</div>`}</div>
   <div class="kpi"><div class="v">${nf(g.concluidas)}</div><div class="l">Atividades concluídas de ${nf(g.aplicaveis)}</div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
   <div class="kpi"><div class="v t">${vz ? '—' : esc(g.lider.nome)}</div><div class="l">${vz ? 'Clínica com mais evolução' : 'Clínica com mais evolução · ' + P(g.lider.pct) + '% (' + g.lider.concluidas + ' de ' + g.lider.aplicaveis + ')'}</div></div>

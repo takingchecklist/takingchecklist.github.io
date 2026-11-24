@@ -67,6 +67,16 @@ h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--or
 .pv{font-family:Consolas,monospace;font-size:12px;color:var(--lbl);white-space:nowrap;text-align:center}
 .it.lh{background:var(--card);font-family:Consolas,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--lbl);font-weight:700;padding-top:7px;padding-bottom:7px;align-items:center}
 .it.lh .dt{text-align:right;color:var(--lbl);font-weight:700}
+.abas{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.aba{font:700 13px Arial,sans-serif;border:1px solid var(--cardln);background:#fff;color:var(--ink);padding:8px 16px;border-radius:20px;cursor:pointer}
+.aba:hover{border-color:var(--orange)}
+.aba.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.aba b{font-family:Consolas,monospace;margin-left:8px;font-weight:700;opacity:.85}
+.it.pai{background:var(--card)}
+.it.pai .tx{font-weight:700;color:var(--ink)}
+.it.sub .tx{padding-left:16px}
+.cnt{font-family:Consolas,monospace;font-size:12px;color:var(--lbl);font-weight:700;margin-left:10px}
+body.pdf .abas{display:none}
 .lg{font-size:11.5px;color:var(--lbl);margin-left:14px;white-space:nowrap}
 .lg i{display:inline-block;width:18px;height:6px;border-radius:3px;background:var(--verde);margin-right:5px;vertical-align:middle}
 .bv{text-align:right;font-family:Consolas,monospace;font-size:13px}
@@ -260,14 +270,39 @@ function porTipo(c) {
   return r;
 }
 
+let abaC = 'exec', abaDe = null;
+function setAba(a) { abaC = a; const c = rota(); if (c) { const y = window.scrollY; $('#app').innerHTML = viewC(c); window.scrollTo(0, y); } }
 function viewC(c) {
   const t = porTipo(c);
   const meta = [c.cidade && c.uf ? c.cidade + ' - ' + c.uf : '', c.cadeiras ? c.cadeiras + ' cadeiras' : '', c.onda, c.escopo].filter(Boolean).map(esc).join(' · ');
   const janela = [c.inicio ? 'Início: ' + fD(c.inicio) : '', c.fim ? 'Prazo: ' + fD(c.fim) : ''].filter(Boolean).join(' · ');
-  const itens = D.atividades.map((a, i) => {
-    const s = c.status[i], k = s === 'NA' ? 'na' : s ? 'ok' : 'pd';
-    return `<div class="it ${k}"><span class="dot"></span><span class="n">${a.n}</span><span class="tx">${esc(a.texto)}${a.tipo === 'Evidência' ? '<span class="tag">Evidência</span>' : ''}</span><span class="pv">${c.previsto && c.previsto[i] ? fD(c.previsto[i]) : ''}</span><span class="dt">${s === 'NA' ? 'N/A' : s ? fD(s) : 'pendente'}</span></div>`;
-  }).join('');
+  if (abaDe !== c.id) { abaC = 'exec'; abaDe = c.id; }
+  const ex = D.extras || {internas: [], evidencias: []};
+  const linha = (n, texto, prev, s, extra) => {
+    const k = s === 'NA' ? 'na' : s ? 'ok' : 'pd';
+    return `<div class="it ${k}${extra || ''}"><span class="dot"></span><span class="n">${n}</span><span class="tx">${esc(texto)}</span><span class="pv">${prev ? fD(prev) : ''}</span><span class="dt">${s === 'NA' ? 'N/A' : s ? fD(s) : 'pendente'}</span></div>`;
+  };
+  const cont = sts => { const v = sts.filter(x => x !== 'NA'); return [v.filter(Boolean).length, v.length]; };
+  const gi = c.int || {status: [], previsto: null}, ge = c.ev || {status: [], previsto: null};
+  const nInt = cont(gi.status), nEv = cont(ge.status);
+  let titulo = 'Execução', itens;
+  if (abaC === 'int' && ex.internas.length) {
+    titulo = 'Atividades internas';
+    itens = ex.internas.map((a, i) => linha('', a.texto, gi.previsto && gi.previsto[i], gi.status[i])).join('');
+  } else if (abaC === 'ev' && ex.evidencias.length) {
+    titulo = 'Evidências';
+    const feito = nEv[1] > 0 && nEv[0] === nEv[1];      // o check do grupo só vem quando todas as evidências estão feitas
+    const pai = `<div class="it pai ${feito ? 'ok' : 'pd'}"><span class="dot"></span><span class="n"></span><span class="tx">Evidências<span class="cnt">${nEv[0]}/${nEv[1]}</span></span><span class="pv"></span><span class="dt">${feito ? 'completas' : 'pendente'}</span></div>`;
+    itens = pai + ex.evidencias.map((a, i) => linha('', a.texto, ge.previsto && ge.previsto[i], ge.status[i], ' sub')).join('');
+  } else {
+    abaC = 'exec';
+    itens = D.atividades.map((a, i) => linha(a.n, a.texto, c.previsto && c.previsto[i], c.status[i])).join('');
+  }
+  const nEx = cont(c.status);
+  const abas = ex.internas.length || ex.evidencias.length
+    ? `<div class="abas"><button type="button" class="aba${abaC === 'exec' ? ' on' : ''}" onclick="setAba('exec')">Execução<b>${nEx[0]}/${nEx[1]}</b></button>`
+      + `<button type="button" class="aba${abaC === 'int' ? ' on' : ''}" onclick="setAba('int')">Atividades internas<b>${nInt[0]}/${nInt[1]}</b></button>`
+      + `<button type="button" class="aba${abaC === 'ev' ? ' on' : ''}" onclick="setAba('ev')">Evidências<b>${nEv[0]}/${nEv[1]}</b></button></div>` : '';
   return `<section class="blk"><a class="back" href="#/">← Visão geral</a>
   <div class="ch"><div class="top"><div><h2>${esc(c.nome)}</h2><div class="meta">${meta}<br>${esc(janela)}</div></div>
   <div class="big">${P(c.pct)}%<small>${c.concluidas} de ${c.aplicaveis} atividades${espC(c) === null ? '' : '<br>esperado da semana ' + P(espC(c)) + '%'}</small></div></div>
@@ -276,7 +311,7 @@ function viewC(c) {
    <div class="note"><b>Última atividade executada</b>${c.ultima ? esc(c.ultima.texto) + '<span>' + fD(c.ultima.data) + '</span>' : 'Nenhuma ainda'}</div>
    <div class="note n2"><b>Próxima pendente</b>${c.proxima ? esc(c.proxima.texto) : 'Tudo concluído'}</div>
   </div>
-  <h3 style="margin-bottom:12px">Checklist da clínica</h3><div class="list"><div class="it lh"><span></span><span></span><span>Atividade</span><span class="pv">Data prevista</span><span class="dt">Execução</span></div>${itens}</div></section>`;
+  <h3 style="margin-bottom:12px">${titulo}</h3>${abas}<div class="list"><div class="it lh"><span></span><span></span><span>Atividade</span><span class="pv">Data prevista</span><span class="dt">Execução</span></div>${itens}</div></section>`;
 }
 
 function render() {

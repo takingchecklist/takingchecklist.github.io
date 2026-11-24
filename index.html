@@ -145,7 +145,8 @@ const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase
 let D = null;
 
 // Esperado pelo cronograma: atividades com data prevista até hoje / atividades aplicáveis (a barra sobe no dia da data)
-function hojeISO() { const h = new Date(), p = n => String(n).padStart(2, '0'); return h.getFullYear() + '-' + p(h.getMonth() + 1) + '-' + p(h.getDate()); }
+// janela da semana: hoje + 6 dias (7 dias contando hoje). Atividade com data além disso ainda não entra no esperado.
+function hojeISO() { const h = new Date(); h.setDate(h.getDate() + 6); const p = n => String(n).padStart(2, '0'); return h.getFullYear() + '-' + p(h.getMonth() + 1) + '-' + p(h.getDate()); }
 function espN(c) {
   const cr = c.previsto; if (!cr) return null;
   const h = hojeISO(); let e = 0;
@@ -171,7 +172,7 @@ function rota() {
 function kpiG() {
   const g = D.geral, vz = g.concluidas === 0, e = esp(D.clinicas);
   return `<section class="kpis">
-  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado hoje ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e).replace('class="bt dual"', 'class="bt dual" style="height:8px"')}</div>`}</div>
+  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado da semana ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e).replace('class="bt dual"', 'class="bt dual" style="height:8px"')}</div>`}</div>
   <div class="kpi"><div class="v">${nf(g.concluidas)}</div><div class="l">Atividades concluídas de ${nf(g.aplicaveis)}</div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
   <div class="kpi"><div class="v t">${vz ? '—' : esc(g.lider.nome)}</div><div class="l">${vz ? 'Clínica com mais evolução' : 'Clínica com mais evolução · ' + P(g.lider.pct) + '% (' + g.lider.concluidas + ' de ' + g.lider.aplicaveis + ')'}</div></div>
@@ -202,7 +203,7 @@ function viewG() {
   const os = ondas();
   const cs = [...D.clinicas].filter(c => !filtroOnda || (c.onda || 'Sem onda') === filtroOnda).sort((a, b) => b.pct - a.pct || a.nome.localeCompare(b.nome, 'pt-BR'));
   const rows = cs.map(c => `<a class="brow" href="#/c/${encodeURIComponent(c.id)}"><span class="nm">${esc(c.nome)}<small>${esc(c.onda || '')}</small></span>${barra(c.pct, espC(c))}<span class="bv">${P(c.pct)}%</span><span class="bx">${c.concluidas}/${c.aplicaveis}</span></a>`).join('');
-  const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div>${barra(o.pct, o.esp)}<div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} atividades${o.esp === null ? '' : ' · esperado hoje ' + P(o.esp) + '%'}</div><div class="pz">${o.inicio ? 'Início: ' + fD(o.inicio) + ' · ' : ''}${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
+  const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div>${barra(o.pct, o.esp)}<div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} atividades${o.esp === null ? '' : ' · esperado da semana ' + P(o.esp) + '%'}</div><div class="pz">${o.inicio ? 'Início: ' + fD(o.inicio) + ' · ' : ''}${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
   const limpar = filtroOnda ? `<button type="button" class="lnk" onclick="filtrarOnda(${os.findIndex(o => o.nome === filtroOnda)})">ver todas as ondas</button>` : '';
   return kpiG() + `<section class="blk" style="padding-bottom:6px"><h3>Evolução por onda</h3><div class="sub2">Clique numa onda para filtrar as clínicas abaixo</div><div class="ondas">${cards}</div></section>`
     + `<section class="blk"><h3>Evolução por clínica${filtroOnda ? ' · ' + esc(filtroOnda) : ''}${limpar}</h3><div class="sub2">Ordenado por % concluído · clique numa clínica para ver o checklist dela${esp(D.clinicas) === null ? '' : '<span class="lg"><i></i>realizado</span><span class="lg"><i class="e"></i>esperado pelo cronograma</span>'}</div><div class="rank" style="--rows:${Math.ceil(cs.length / 2)}">${rows}</div></section>`;
@@ -228,7 +229,7 @@ function viewC(c) {
   }).join('');
   return `<section class="blk"><a class="back" href="#/">← Visão geral</a>
   <div class="ch"><div class="top"><div><h2>${esc(c.nome)}</h2><div class="meta">${meta}<br>${esc(janela)}</div></div>
-  <div class="big">${P(c.pct)}%<small>${c.concluidas} de ${c.aplicaveis} atividades${espC(c) === null ? '' : '<br>esperado hoje ' + P(espC(c)) + '%'}</small></div></div>
+  <div class="big">${P(c.pct)}%<small>${c.concluidas} de ${c.aplicaveis} atividades${espC(c) === null ? '' : '<br>esperado da semana ' + P(espC(c)) + '%'}</small></div></div>
   ${barra(c.pct, espC(c))}${espC(c) === null ? '' : '<div class="sub2" style="margin:8px 0 0"><span class="lg" style="margin-left:0"><i></i>realizado</span><span class="lg"><i class="e"></i>esperado pelo cronograma</span></div>'}
   <div class="chips"><span class="chip">Execução <b>${t.Execução[0]}/${t.Execução[1]}</b></span><span class="chip">Evidências <b>${t.Evidência[0]}/${t.Evidência[1]}</b></span></div></div>
   <div class="g2">

@@ -30,7 +30,7 @@ body{min-height:100vh;display:flex;flex-direction:column}
 .snap{margin-left:auto;font-family:Consolas,monospace;font-size:12px;color:#B8BEC9;text-align:right;line-height:1.7}
 .snap b{color:#fff}
 main{flex:1}
-.kpis{display:grid;grid-template-columns:1fr 1fr 1fr 1.1fr 1.8fr;border-bottom:1px solid var(--cardln);background:var(--card)}
+.kpis{display:grid;grid-template-columns:1fr 1.4fr 1fr 1.25fr 1.25fr;border-bottom:1px solid var(--cardln);background:var(--card)}
 .kpi{padding:20px 18px 18px;border-right:1px solid var(--cardln);min-width:0}
 .kpi:last-child{border-right:0}
 .kpi .v{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
@@ -38,6 +38,15 @@ main{flex:1}
 .kpi .v.t{font-size:20px;letter-spacing:0;padding:6px 0 2px}
 .kpi .l{font-size:11.5px;color:var(--lbl);margin-top:4px;line-height:1.4}
 .kpi .tr{height:8px;background:var(--trk);border-radius:4px;margin-top:10px;overflow:hidden}
+.kpi.fase .arrows{display:flex}
+.ar{flex:1;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin-right:-5px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%);padding:0 6px}
+.ar.f{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%);border-radius:5px 0 0 5px}
+.ar.done{background:var(--verde);color:#fff}
+.ar.cur{background:var(--orange);color:#fff}
+.ar.fut{background:#fff;color:var(--lbl)}
+.kpi.fase .pr{display:flex;gap:26px;margin-top:10px}
+.kpi.fase .pr small{display:block;font-size:11.5px;color:var(--lbl);font-weight:700}
+.kpi.fase .pr b{font-size:24px;letter-spacing:-.02em;color:var(--ink)}
 .blk{padding:22px 42px 26px}
 h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
 h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--orange)}
@@ -171,20 +180,44 @@ function rota() {
   return m ? D.clinicas.find(c => c.id === decodeURIComponent(m[1])) || null : null;
 }
 
+function pad2(n) { return String(n).padStart(2, '0'); }
+function isoDia(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+// Tarefas agendadas na semana (de hoje até hoje+6) e quantas dessas já foram executadas
+function tarefasSemana() {
+  const a = isoDia(new Date()), b = hojeISO(); let t = 0, x = 0;
+  D.clinicas.forEach(c => {
+    if (!c.previsto) return;
+    D.atividades.forEach((_, i) => {
+      const d = c.previsto[i], s = c.status[i];
+      if (!d || s === 'NA' || d < a || d > b) return;
+      t++; if (s) x++;
+    });
+  });
+  return {t, x, fim: b};
+}
+// Últimas tarefas executadas: data mais recente, quantas nesse dia e quantas nos últimos 7 dias
+function ultimasTarefas() {
+  const datas = [];
+  D.clinicas.forEach(c => c.status.forEach(s => { if (s && s !== 'NA') datas.push(s); }));
+  if (!datas.length) return null;
+  const ult = datas.reduce((m, d) => d > m ? d : m);
+  const h = new Date(); h.setDate(h.getDate() - 6); const ini = isoDia(h);
+  return {data: ult, n: datas.filter(d => d === ult).length, sem: datas.filter(d => d >= ini).length};
+}
+
 function kpiG() {
-  const g = D.geral, vz = g.concluidas === 0, e = esp(D.clinicas);
-  // onda atual = primeira onda (1ª, 2ª, 3ª...) que ainda não terminou; quando uma acaba, o quadro passa para a seguinte
+  const g = D.geral, e = esp(D.clinicas);
+  // fase do projeto: uma seta por onda; a atual é a primeira que ainda não terminou (ao acabar uma, passa para a seguinte)
   const nos = ondas().filter(o => /^\d/.test(o.nome) && o.ap > 0).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', {numeric: true}));
   const oa = nos.find(o => o.conc < o.ap) || nos[nos.length - 1] || null;
-  // clínica mais atrasada = maior distância entre o esperado da semana e o realizado
-  const atr = D.clinicas.map(c => ({c, e: espC(c)})).filter(x => x.e !== null && x.e > x.c.pct)
-    .sort((a, b) => (b.e - b.c.pct) - (a.e - a.c.pct) || a.c.nome.localeCompare(b.c.nome, 'pt-BR'))[0];
+  const setas = nos.map((o, i) => `<span class="ar ${o.conc >= o.ap ? 'done' : (o === oa ? 'cur' : 'fut')}${i === 0 ? ' f' : ''}" title="${esc(o.nome)}">${i + 1}</span>`).join('');
+  const sem = tarefasSemana(), ult = ultimasTarefas(), temCrono = D.clinicas.some(c => c.previsto);
   return `<section class="kpis">
   <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado da semana ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e).replace('class="bt dual"', 'class="bt dual" style="height:8px"')}</div>`}</div>
-  <div class="kpi"><div class="v">${oa ? nf(oa.conc) : nf(g.concluidas)}</div><div class="l">Atividades concluídas de ${oa ? nf(oa.ap) + ' · ' + esc(oa.nome) : nf(g.aplicaveis)}</div></div>
+  <div class="kpi fase"><div class="l" style="margin:0 0 8px">Fase do projeto${oa ? ' · ' + esc(oa.nome) : ''}</div><div class="arrows">${setas}</div><div class="pr"><div><small>Prev.</small><b>${oa && oa.esp !== null ? P(oa.esp) + '%' : '—'}</b></div><div><small>Real</small><b>${oa ? P(oa.pct) + '%' : '—'}</b></div></div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
-  <div class="kpi"><div class="v t">${vz ? '—' : esc(g.lider.nome)}</div><div class="l">${vz ? 'Clínica com mais evolução' : 'Clínica com mais evolução · ' + P(g.lider.pct) + '% (' + g.lider.concluidas + ' de ' + g.lider.aplicaveis + ')'}</div></div>
-  <div class="kpi"><div class="v t">${atr ? esc(atr.c.nome) : '—'}</div><div class="l">${atr ? 'Clínica mais atrasada · realizado ' + P(atr.c.pct) + '% x esperado ' + P(atr.e) + '%' : (e === null ? 'Clínica mais atrasada · cronograma ainda não preenchido' : 'Nenhuma clínica atrasada em relação ao cronograma')}</div></div>
+  <div class="kpi"><div class="v">${temCrono ? nf(sem.t) : '—'}</div><div class="l">${temCrono ? 'Próximas tarefas agendadas · ' + nf(sem.x) + ' executadas de ' + nf(sem.t) + ' · até ' + fDC(sem.fim) : 'Próximas tarefas agendadas · cronograma ainda não preenchido'}</div></div>
+  <div class="kpi"><div class="v">${ult ? nf(ult.n) : '—'}</div><div class="l">${ult ? 'Últimas tarefas executadas · ' + fD(ult.data) + ' · ' + nf(ult.sem) + ' nos últimos 7 dias' : 'Últimas tarefas · nenhuma executada ainda'}</div></div>
   </section>`;
 }
 

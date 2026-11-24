@@ -159,7 +159,10 @@ function ondas() {
     const conc = cs.reduce((s, c) => s + c.concluidas, 0), ap = cs.reduce((s, c) => s + c.aplicaveis, 0), cont = {};
     cs.forEach(c => { if (c.fim) cont[c.fim] = (cont[c.fim] || 0) + 1; });
     const top = Object.entries(cont).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? 1 : -1))[0];
-    return {nome, cs, conc, ap, pct: ap ? conc / ap : 0, prazo: top ? top[0] : null,
+    const ci = {};
+    cs.forEach(c => { if (c.inicio) ci[c.inicio] = (ci[c.inicio] || 0) + 1; });
+    const ti = Object.entries(ci).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0];
+    return {nome, cs, conc, ap, pct: ap ? conc / ap : 0, prazo: top ? top[0] : null, inicio: ti ? ti[0] : null,
       feitas: cs.filter(c => c.aplicaveis && c.concluidas === c.aplicaveis).length};
   }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
@@ -171,7 +174,7 @@ function viewG() {
   const os = ondas();
   const cs = [...D.clinicas].filter(c => !filtroOnda || (c.onda || 'Sem onda') === filtroOnda).sort((a, b) => b.pct - a.pct || a.nome.localeCompare(b.nome, 'pt-BR'));
   const rows = cs.map(c => `<a class="brow" href="#/c/${encodeURIComponent(c.id)}"><span class="nm">${esc(c.nome)}<small>${esc(c.onda || '')}</small></span><span class="bt"><i style="width:${P(c.pct)}%"></i></span><span class="bv">${P(c.pct)}%</span><span class="bx">${c.concluidas}/${c.aplicaveis}</span></a>`).join('');
-  const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div><span class="bt"><i style="width:${P(o.pct)}%"></i></span><div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} tarefas</div><div class="pz">${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
+  const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div><span class="bt"><i style="width:${P(o.pct)}%"></i></span><div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} tarefas</div><div class="pz">${o.inicio ? 'Início: ' + fD(o.inicio) + ' · ' : ''}${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
   const limpar = filtroOnda ? `<button type="button" class="lnk" onclick="filtrarOnda(${os.findIndex(o => o.nome === filtroOnda)})">ver todas as ondas</button>` : '';
   return kpiG() + `<section class="blk" style="padding-bottom:6px"><h3>Progresso por onda</h3><div class="sub2">Clique numa onda para filtrar as clínicas abaixo</div><div class="ondas">${cards}</div></section>`
     + `<section class="blk"><h3>Progresso por clínica${filtroOnda ? ' · ' + esc(filtroOnda) : ''}${limpar}</h3><div class="sub2">Ordenado por % concluído · clique numa clínica para ver o checklist dela</div><div class="rank" style="--rows:${Math.ceil(cs.length / 2)}">${rows}</div></section>`;
@@ -190,7 +193,7 @@ function porTipo(c) {
 function viewC(c) {
   const t = porTipo(c);
   const meta = [c.cidade && c.uf ? c.cidade + ' - ' + c.uf : '', c.cadeiras ? c.cadeiras + ' cadeiras' : '', c.onda, c.escopo].filter(Boolean).map(esc).join(' · ');
-  const janela = c.fim ? 'Prazo: ' + fD(c.fim) : '';
+  const janela = [c.inicio ? 'Início: ' + fD(c.inicio) : '', c.fim ? 'Prazo: ' + fD(c.fim) : ''].filter(Boolean).join(' · ');
   const itens = D.atividades.map((a, i) => {
     const s = c.status[i], k = s === 'NA' ? 'na' : s ? 'ok' : 'pd';
     return `<div class="it ${k}"><span class="dot"></span><span class="n">${a.n}</span><span class="tx">${esc(a.texto)}${a.tipo === 'Evidência' ? '<span class="tag">Evidência</span>' : ''}</span><span class="dt">${s === 'NA' ? 'N/A' : s ? fD(s) : 'pendente'}</span></div>`;

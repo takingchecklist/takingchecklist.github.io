@@ -145,9 +145,8 @@ let D = null;
 
 // Esperado pelo cronograma: atividades com data prevista até hoje / atividades aplicáveis (a barra sobe no dia da data)
 function hojeISO() { const h = new Date(), p = n => String(n).padStart(2, '0'); return h.getFullYear() + '-' + p(h.getMonth() + 1) + '-' + p(h.getDate()); }
-function cronoDe(onda) { const k = Object.keys(D.cronograma || {}).find(x => norm(x) === norm(onda || '')); return k ? D.cronograma[k] : null; }
 function espN(c) {
-  const cr = cronoDe(c.onda); if (!cr) return null;
+  const cr = c.previsto; if (!cr) return null;
   const h = hojeISO(); let e = 0;
   D.atividades.forEach((a, i) => { if (c.status[i] !== 'NA' && cr[i] && cr[i] <= h) e++; });
   return e;

@@ -49,6 +49,15 @@ h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--or
 .brow .nm small{display:block;font-weight:400;font-size:10.5px;color:var(--lbl);font-family:Consolas,monospace;letter-spacing:.04em}
 .bt{height:12px;background:var(--trk);border-radius:6px;overflow:hidden;display:block}
 .bt i{display:block;height:100%;border-radius:6px;background:var(--orange)}
+.bt.dual,.onda .bt.dual,.ch .bt.dual{height:auto;background:none;overflow:visible;display:flex;flex-direction:column;gap:2px;--h:12px}
+.onda .bt.dual{--h:14px;margin:8px 0}
+.ch .bt.dual{--h:16px;margin-top:16px}
+.bt.dual .tk{display:block;height:calc((var(--h) - 2px) / 2);background:var(--trk);border-radius:4px;overflow:hidden}
+.onda .bt.dual .tk,.ch .bt.dual .tk{background:#fff}
+.bt.dual .tk i{border-radius:4px}
+.bt.dual .tk i.e,.lg i.e{background:var(--ink)}
+.lg{font-size:11.5px;color:var(--lbl);margin-left:14px;white-space:nowrap}
+.lg i{display:inline-block;width:18px;height:6px;border-radius:3px;background:var(--orange);margin-right:5px;vertical-align:middle}
 .bv{text-align:right;font-family:Consolas,monospace;font-size:13px}
 .bx{text-align:right;font-family:Consolas,monospace;font-size:11px;color:var(--lbl)}
 .ondas{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
@@ -135,16 +144,36 @@ const nf = n => Number(n).toLocaleString('pt-BR');
 const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 let D = null;
 
+// Esperado pelo cronograma: atividades com data prevista até hoje / atividades aplicáveis (a barra sobe no dia da data)
+function hojeISO() { const h = new Date(), p = n => String(n).padStart(2, '0'); return h.getFullYear() + '-' + p(h.getMonth() + 1) + '-' + p(h.getDate()); }
+function cronoDe(onda) { const k = Object.keys(D.cronograma || {}).find(x => norm(x) === norm(onda || '')); return k ? D.cronograma[k] : null; }
+function espN(c) {
+  const cr = cronoDe(c.onda); if (!cr) return null;
+  const h = hojeISO(); let e = 0;
+  D.atividades.forEach((a, i) => { if (c.status[i] !== 'NA' && cr[i] && cr[i] <= h) e++; });
+  return e;
+}
+function esp(cs) {
+  let e = 0, a = 0, tem = false;
+  cs.forEach(c => { const n = espN(c); if (n !== null) { tem = true; e += n; } a += c.aplicaveis; });
+  return tem && a ? e / a : null;
+}
+function espC(c) { const n = espN(c); return n === null ? null : (c.aplicaveis ? n / c.aplicaveis : 0); }
+function barra(real, e) {
+  if (e === null) return `<span class="bt"><i style="width:${P(real)}%"></i></span>`;
+  return `<span class="bt dual" title="Realizado ${P(real)}% · Esperado ${P(e)}%"><span class="tk"><i class="r" style="width:${P(real)}%"></i></span><span class="tk"><i class="e" style="width:${P(e)}%"></i></span></span>`;
+}
+
 function rota() {
   const m = location.hash.match(/^#\/c\/(.+)$/);
   return m ? D.clinicas.find(c => c.id === decodeURIComponent(m[1])) || null : null;
 }
 
 function kpiG() {
-  const g = D.geral, vz = g.concluidas === 0;
+  const g = D.geral, vz = g.concluidas === 0, e = esp(D.clinicas);
   return `<section class="kpis">
-  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto</div><div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div></div>
-  <div class="kpi"><div class="v">${nf(g.concluidas)}</div><div class="l">Atividades concluídas de${nf(g.aplicaveis)}</div></div>
+  <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado hoje ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e)}</div>`}</div>
+  <div class="kpi"><div class="v">${nf(g.concluidas)}</div><div class="l">Atividades concluídas de ${nf(g.aplicaveis)}</div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
   <div class="kpi"><div class="v t">${vz ? '—' : esc(g.lider.nome)}</div><div class="l">${vz ? 'Clínica com mais evolução' : 'Clínica com mais evolução · ' + P(g.lider.pct) + '% (' + g.lider.concluidas + ' de ' + g.lider.aplicaveis + ')'}</div></div>
   <div class="kpi"><div class="v t">${g.ultima ? esc(g.ultima.texto) : '—'}</div><div class="l">${g.ultima ? 'Atividade mais recente · ' + esc(g.ultima.clinica) + ' · ' + fD(g.ultima.data) : 'Atividade mais recente · nenhuma concluída ainda'}</div></div>
@@ -162,7 +191,7 @@ function ondas() {
     const ci = {};
     cs.forEach(c => { if (c.inicio) ci[c.inicio] = (ci[c.inicio] || 0) + 1; });
     const ti = Object.entries(ci).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0];
-    return {nome, cs, conc, ap, pct: ap ? conc / ap : 0, prazo: top ? top[0] : null, inicio: ti ? ti[0] : null,
+    return {nome, cs, conc, ap, pct: ap ? conc / ap : 0, prazo: top ? top[0] : null, inicio: ti ? ti[0] : null, esp: esp(cs),
       feitas: cs.filter(c => c.aplicaveis && c.concluidas === c.aplicaveis).length};
   }).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
@@ -173,11 +202,11 @@ function filtrarOnda(i) {
 function viewG() {
   const os = ondas();
   const cs = [...D.clinicas].filter(c => !filtroOnda || (c.onda || 'Sem onda') === filtroOnda).sort((a, b) => b.pct - a.pct || a.nome.localeCompare(b.nome, 'pt-BR'));
-  const rows = cs.map(c => `<a class="brow" href="#/c/${encodeURIComponent(c.id)}"><span class="nm">${esc(c.nome)}<small>${esc(c.onda || '')}</small></span><span class="bt"><i style="width:${P(c.pct)}%"></i></span><span class="bv">${P(c.pct)}%</span><span class="bx">${c.concluidas}/${c.aplicaveis}</span></a>`).join('');
-  const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div><span class="bt"><i style="width:${P(o.pct)}%"></i></span><div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} atividades</div><div class="pz">${o.inicio ? 'Início: ' + fD(o.inicio) + ' · ' : ''}${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
+  const rows = cs.map(c => `<a class="brow" href="#/c/${encodeURIComponent(c.id)}"><span class="nm">${esc(c.nome)}<small>${esc(c.onda || '')}</small></span>${barra(c.pct, espC(c))}<span class="bv">${P(c.pct)}%</span><span class="bx">${c.concluidas}/${c.aplicaveis}</span></a>`).join('');
+  const cards = os.map((o, i) => `<button type="button" class="onda${filtroOnda === o.nome ? ' on' : ''}" onclick="filtrarOnda(${i})"><div class="t"><b>${esc(o.nome)}</b><span>${P(o.pct)}%</span></div>${barra(o.pct, o.esp)}<div class="s">${o.cs.length} clínicas · ${o.feitas} concluídas · ${o.conc}/${o.ap} atividades${o.esp === null ? '' : ' · esperado hoje ' + P(o.esp) + '%'}</div><div class="pz">${o.inicio ? 'Início: ' + fD(o.inicio) + ' · ' : ''}${o.prazo ? 'Prazo: ' + fD(o.prazo) : 'Prazo a definir'}</div></button>`).join('');
   const limpar = filtroOnda ? `<button type="button" class="lnk" onclick="filtrarOnda(${os.findIndex(o => o.nome === filtroOnda)})">ver todas as ondas</button>` : '';
   return kpiG() + `<section class="blk" style="padding-bottom:6px"><h3>Evolução por onda</h3><div class="sub2">Clique numa onda para filtrar as clínicas abaixo</div><div class="ondas">${cards}</div></section>`
-    + `<section class="blk"><h3>Evolução por clínica${filtroOnda ? ' · ' + esc(filtroOnda) : ''}${limpar}</h3><div class="sub2">Ordenado por % concluído · clique numa clínica para ver o checklist dela</div><div class="rank" style="--rows:${Math.ceil(cs.length / 2)}">${rows}</div></section>`;
+    + `<section class="blk"><h3>Evolução por clínica${filtroOnda ? ' · ' + esc(filtroOnda) : ''}${limpar}</h3><div class="sub2">Ordenado por % concluído · clique numa clínica para ver o checklist dela${esp(D.clinicas) === null ? '' : '<span class="lg"><i></i>realizado</span><span class="lg"><i class="e"></i>esperado pelo cronograma</span>'}</div><div class="rank" style="--rows:${Math.ceil(cs.length / 2)}">${rows}</div></section>`;
 }
 
 function porTipo(c) {
@@ -200,8 +229,8 @@ function viewC(c) {
   }).join('');
   return `<section class="blk"><a class="back" href="#/">← Visão geral</a>
   <div class="ch"><div class="top"><div><h2>${esc(c.nome)}</h2><div class="meta">${meta}<br>${esc(janela)}</div></div>
-  <div class="big">${P(c.pct)}%<small>${c.concluidas} de ${c.aplicaveis} atividades</small></div></div>
-  <span class="bt"><i style="width:${P(c.pct)}%"></i></span>
+  <div class="big">${P(c.pct)}%<small>${c.concluidas} de ${c.aplicaveis} atividades${espC(c) === null ? '' : '<br>esperado hoje ' + P(espC(c)) + '%'}</small></div></div>
+  ${barra(c.pct, espC(c))}${espC(c) === null ? '' : '<div class="sub2" style="margin:8px 0 0"><span class="lg" style="margin-left:0"><i></i>realizado</span><span class="lg"><i class="e"></i>esperado pelo cronograma</span></div>'}
   <div class="chips"><span class="chip">Execução <b>${t.Execução[0]}/${t.Execução[1]}</b></span><span class="chip">Evidências <b>${t.Evidência[0]}/${t.Evidência[1]}</b></span></div></div>
   <div class="g2">
    <div class="note"><b>Última atividade executada</b>${c.ultima ? esc(c.ultima.texto) + '<span>' + fD(c.ultima.data) + '</span>' : 'Nenhuma ainda'}</div>

@@ -271,8 +271,7 @@ function viewC(c) {
   return `<section class="blk"><a class="back" href="#/">← Visão geral</a>
   <div class="ch"><div class="top"><div><h2>${esc(c.nome)}</h2><div class="meta">${meta}<br>${esc(janela)}</div></div>
   <div class="big">${P(c.pct)}%<small>${c.concluidas} de ${c.aplicaveis} atividades${espC(c) === null ? '' : '<br>esperado da semana ' + P(espC(c)) + '%'}</small></div></div>
-  ${barra(c.pct, espC(c))}${espC(c) === null ? '' : '<div class="sub2" style="margin:8px 0 0"><span class="lg" style="margin-left:0"><i></i>realizado</span><span class="lg"><i class="e"></i>esperado pelo cronograma</span></div>'}
-  <div class="chips"><span class="chip">Execução <b>${t.Execução[0]}/${t.Execução[1]}</b></span><span class="chip">Evidências <b>${t.Evidência[0]}/${t.Evidência[1]}</b></span></div></div>
+  ${barra(c.pct, espC(c))}${espC(c) === null ? '' : '<div class="sub2" style="margin:8px 0 0"><span class="lg" style="margin-left:0"><i></i>realizado</span><span class="lg"><i class="e"></i>esperado pelo cronograma</span></div>'}</div>
   <div class="g2">
    <div class="note"><b>Última atividade executada</b>${c.ultima ? esc(c.ultima.texto) + '<span>' + fD(c.ultima.data) + '</span>' : 'Nenhuma ainda'}</div>
    <div class="note n2"><b>Próxima pendente</b>${c.proxima ? esc(c.proxima.texto) : 'Tudo concluído'}</div>

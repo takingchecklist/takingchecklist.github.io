@@ -64,6 +64,15 @@ main{flex:1}
 .kpi.fase .pr{display:flex;gap:26px;margin-top:10px}
 .kpi.fase .pr small{display:block;font-size:11.5px;color:var(--lbl);font-weight:700}
 .kpi.fase .pr b{font-size:24px;letter-spacing:-.02em;color:var(--ink)}
+.setas{display:flex;margin-top:6px}
+.sa{position:relative;flex:1;min-width:0;height:46px;margin-right:-5px;background:var(--trk);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%,14px 50%)}
+.sa.f{clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%);border-radius:6px 0 0 6px}
+.sa i{position:absolute;left:0;top:0;height:100%;display:block}
+.sa i.e{background:var(--ink);opacity:.85}
+.sa i.r{background:var(--verde)}
+.kpi .k{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 8px}
+.kpi .v small{font-size:15px;font-weight:600;color:var(--lbl);margin-left:6px;letter-spacing:0}
+.kpi .s{font-size:12px;color:var(--lbl);margin-top:4px;line-height:1.4}
 .blk{padding:22px 42px 26px}
 h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
 h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--orange)}
@@ -188,7 +197,10 @@ function hojeISO() { const h = new Date(); h.setDate(h.getDate() + 6); const p =
 // Esperado "blocado por semana": semanas do cronograma (a partir do início da 1ª onda, 7 dias cada). O esperado
 // inclui tudo que está previsto até o FIM da semana em que estamos e só sobe quando a próxima semana começa.
 function fimSemanaISO() {
-  const orig = ondas().filter(o => /^\d/.test(o.nome) && o.inicio).map(o => o.inicio).sort()[0];
+  // origem = menor início de onda (data mais comum entre as clínicas de cada onda numerada); não usa ondas() para evitar recursão
+  const por = {};
+  D.clinicas.forEach(c => { if (c.inicio && /^\d/.test(c.onda || '')) { const m = por[c.onda] = por[c.onda] || {}; m[c.inicio] = (m[c.inicio] || 0) + 1; } });
+  const orig = Object.values(por).map(m => Object.entries(m).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0][0]).sort()[0];
   if (!orig) return hojeISO();
   const w = Math.floor(diasEntre(orig, isoDia(new Date())) / 7);   // antes da 1ª semana vale -1 (termina na véspera do início)
   return addDias(orig, 7 * w + 6);
@@ -293,17 +305,17 @@ function semanaTxt(o, origem, fimProj) {
 
 function kpiG() {
   const g = D.geral, e = esp(D.clinicas);
-  // fase do projeto: uma seta por onda; a atual é a primeira que ainda não terminou (ao acabar uma, passa para a seguinte)
-  const nos = ondas().filter(o => /^\d/.test(o.nome) && o.ap > 0).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', {numeric: true}));
-  const oa = nos.find(o => o.conc < o.ap) || nos[nos.length - 1] || null;
-  const origemSem = nos.map(o => o.inicio).filter(Boolean).sort()[0], fimProjSem = nos.map(o => o.prazo).filter(Boolean).sort().pop();
-  const setas = nos.map((o, i) => `<div class="fs"><span class="ar ${o.conc >= o.ap ? 'done' : (o === oa ? 'cur' : 'fut')}${i === 0 ? ' f' : ''}" title="${esc(o.nome)}">${esc(o.nome)}</span></div>`).join('');
+  // fase do projeto: 3 setas, cada uma vale 1/3 do projeto; o real (verde) e o previsto (escuro) vão enchendo da 1ª à 3ª
+  const conc = D.clinicas.reduce((s, c) => s + c.concluidas, 0), ap = D.clinicas.reduce((s, c) => s + c.aplicaveis, 0);
+  const real = ap ? conc / ap : 0, prev = esp(D.clinicas);
+  const parte = (x, k) => Math.round(Math.min(1, Math.max(0, x * 3 - k)) * 1000) / 10;
+  const setas = [0, 1, 2].map(k => `<div class="sa${k === 0 ? ' f' : ''}">${prev === null ? '' : `<i class="e" style="width:${parte(prev, k)}%"></i>`}<i class="r" style="width:${parte(real, k)}%"></i></div>`).join('');
   const sem = tarefasSemana(), ult = ultimasTarefas(), temCrono = D.clinicas.some(c => c.previsto);
   return `<section class="kpis">
-  <div class="kpi fase"><div class="l" style="margin:0 0 8px">Fase do projeto${oa ? ' · ' + esc(oa.nome) : ''}${oa ? ' <b class="sx">' + esc(semanaTxt(oa, origemSem, fimProjSem)) + '</b>' : ''}</div>${oa ? `<div class="fbar">${barra(oa.pct, oa.esp)}<span class="fin">${esc(oa.nome)}</span></div>` : ''}<div class="pr"><div><small>Prev.</small><b>${oa && oa.esp !== null ? P(oa.esp) + '%' : '—'}</b></div><div><small>Real</small><b>${oa ? P(oa.pct) + '%' : '—'}</b></div></div></div>
-  <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
-  <div class="kpi"><div class="v">${temCrono ? nf(sem.t) : '—'}</div><div class="l">${temCrono ? 'Próximas tarefas agendadas · ' + nf(sem.x) + ' executadas de ' + nf(sem.t) + ' · até ' + fDC(sem.fim) : 'Próximas tarefas agendadas · cronograma ainda não preenchido'}</div></div>
-  <div class="kpi"><div class="v">${ult ? nf(ult.n) : '—'}</div><div class="l">${ult ? 'Últimas tarefas executadas · ' + fD(ult.data) + ' · ' + nf(ult.sem) + ' nos últimos 7 dias' : 'Últimas tarefas · nenhuma executada ainda'}</div></div>
+  <div class="kpi fase"><div class="k">Fase do projeto</div><div class="setas" title="Realizado ${P(real)}%${prev === null ? '' : ' · Previsto ' + P(prev) + '%'}">${setas}</div><div class="pr"><div><small>Prev.</small><b>${prev !== null ? P(prev) + '%' : '—'}</b></div><div><small>Real</small><b>${P(real)}%</b></div></div></div>
+  <div class="kpi"><div class="k">Clínicas concluídas</div><div class="v">${g.clinicas_concluidas}<small>de ${g.clinicas_total}</small></div></div>
+  <div class="kpi"><div class="k">Tarefas agendadas · próximos 7 dias</div>${temCrono ? `<div class="v">${nf(sem.x)}<small>de ${nf(sem.t)} executadas</small></div><div class="s">até ${fDC(sem.fim)}</div>` : '<div class="v">—</div><div class="s">cronograma ainda não preenchido</div>'}</div>
+  <div class="kpi"><div class="k">Últimas tarefas executadas</div>${ult ? `<div class="v">${nf(ult.n)}<small>em ${fD(ult.data)}</small></div><div class="s">${nf(ult.sem)} nos últimos 7 dias</div>` : '<div class="v">—</div><div class="s">nenhuma executada ainda</div>'}</div>
   </section>`;
 }
 

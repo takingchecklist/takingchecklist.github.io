@@ -61,7 +61,7 @@ main{flex:1}
 .ar.done{background:var(--verde);color:#fff}
 .ar.cur{background:var(--orange);color:#fff}
 .ar.fut{background:#fff;color:var(--lbl)}
-.kpi.fase .pr{display:flex;gap:26px;margin-top:10px}
+.kpi.fase .pr{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:12px}
 .kpi.fase .pr small{display:block;font-size:11.5px;color:var(--lbl);font-weight:700}
 .kpi.fase .pr b{font-size:24px;letter-spacing:-.02em;color:var(--ink)}
 .setas{display:flex;margin-top:6px}
@@ -76,7 +76,9 @@ main{flex:1}
 .kpi.click{cursor:pointer}
 .kpi.click:hover{background:#fff}
 .kpi .s.ver{color:var(--orange2);font-weight:700;margin-top:8px}
-.kpi.fase .pr em.pn{display:block;font-style:normal;font-size:11.5px;color:var(--lbl);margin-top:2px;max-width:150px;line-height:1.3}
+.kpi.fase .pr em.pn{display:block;font-style:normal;font-size:11.5px;color:var(--lbl);margin-top:2px;line-height:1.3}
+body.pdf .kpi:not(.fase){display:none}
+body.pdf .kpis{grid-template-columns:1fr}
 .kpi .s.dt{font-size:13px;font-weight:600;color:var(--ink)}
 .pop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
 body.pdf .pop,body.pdf .nopdf,body.pdf .kpi .s.ver{display:none}
@@ -249,14 +251,14 @@ function isoDia(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-'
 // Próxima data agendada: a menor data prevista de hoje em diante com tarefa ainda não executada, e quantas tarefas caem nela
 function tarefasSemana() {
   const a = isoDia(new Date()), por = {};
-  D.clinicas.forEach(c => {
-    if (!c.previsto) return;
-    D.atividades.forEach((at, i) => {
-      const d = c.previsto[i], s = c.status[i];
-      if (!d || s || d < a) return;           // sem data, já executada/N-A ou no passado
-      (por[d] = por[d] || []).push({d, c: c.nome, a: at.texto || '', t: 'Execução'});
-    });
+  const ex = D.extras || {internas: [], evidencias: []};
+  const add = (previsto, status, nomes, tipo, c) => (previsto || []).forEach((d, i) => {
+    const s = (status || [])[i];
+    if (!d || s || d < a) return;               // sem data, já executada/N-A ou no passado
+    (por[d] = por[d] || []).push({d, c: c.nome, a: (nomes[i] || {}).texto || '', t: tipo});
   });
+  // todas as tarefas que têm data prevista no cronograma: Execução e Evidências (as Internas não têm data no cronograma)
+  D.clinicas.forEach(c => { add(c.previsto, c.status, D.atividades, 'Execução', c); add((c.ev || {}).previsto, (c.ev || {}).status, ex.evidencias, 'Evidência', c); });
   const datas = Object.keys(por).sort();
   return datas.length ? {data: datas[0], t: por[datas[0]].length, rows: por[datas[0]]} : {data: null, t: 0, rows: []};
 }
@@ -366,7 +368,7 @@ function kpiG() {
   const setas = [0, 1, 2].map(k => `<div class="sa${k === 0 ? ' f' : ''}">${prev === null ? '' : `<i class="e" style="width:${parte(prev, k)}%"></i>`}<i class="r" style="width:${parte(real, k)}%"></i></div>`).join('');
   const pa = prevAte(), sem = tarefasSemana(), ult = ultimasTarefas(), temCrono = D.clinicas.some(c => c.previsto);
   return `<section class="kpis">
-  <div class="kpi fase"><div class="k">Evolução do projeto</div><div class="setas" title="Realizado ${P(real)}%${prev === null ? '' : ' · Previsto ' + P(prev) + '%'}">${setas}</div><div class="pr"><div><small>Prev.</small><b>${prev !== null ? P(prev) + '%' : '—'}</b>${prev !== null && pa.data ? `<em class="pn">${nf(pa.n)} atividades previstas até ${fD(pa.data)}</em>` : ''}</div><div><small>Real</small><b>${P(real)}%</b></div></div></div>
+  <div class="kpi fase"><div class="k">Evolução do projeto</div><div class="setas" title="Realizado ${P(real)}%${prev === null ? '' : ' · Previsto ' + P(prev) + '%'}">${setas}</div><div class="pr"><div><small>Prev.</small><b>${prev !== null ? P(prev) + '%' : '—'}</b>${prev !== null && pa.data ? `<em class="pn">${nf(pa.n)} atividades previstas até ${fDC(pa.data)}</em>` : ''}</div><div><small>Real</small><b>${P(real)}%</b><em class="pn">${nf(conc)} atividades executadas</em></div></div></div>
   <div class="kpi"><div class="k">Clínicas concluídas</div><div class="v">${g.clinicas_concluidas}<small>de ${g.clinicas_total}</small></div></div>
   <div class="kpi${sem.data ? ' click' : ''}"${sem.data ? ' role="button" tabindex="0" onclick="abrirProximas()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();abrirProximas()}"' : ''}><div class="k">Próximas tarefas agendadas</div>${temCrono ? (sem.data ? `<div class="v">${nf(sem.t)}<small>em ${fD(sem.data)}</small></div><div class="s ver">Ver lista ›</div>` : '<div class="v">—</div><div class="s">nenhuma tarefa agendada pendente</div>') :'<div class="v">—</div><div class="s">cronograma ainda não preenchido</div>'}</div>
   <div class="kpi${ult ? ' click' : ''}"${ult ? ' role="button" tabindex="0" onclick="abrirUltimas()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();abrirUltimas()}"' : ''}><div class="k">Últimas tarefas executadas</div>${ult ? `<div class="v">${nf(temCrono ? ult.feitas : ult.n)}${temCrono ? `<small>de ${nf(ult.prev)} previstas</small>` : ''}</div><div class="s dt">${fD(ult.data)}</div><div class="s ver">Ver lista ›</div>` : '<div class="v">—</div><div class="s">nenhuma executada ainda</div>'}</div>
@@ -472,7 +474,7 @@ function render() {
   $('#app').innerHTML = c ? viewC(c) : viewG();
   document.title = (c ? c.nome + ' · ' : '') + 'Checklist das Clínicas · Grupo Taking';
   const g = new Date(D.excel_em || D.gerado_em);
-  $('#snap').innerHTML = 'Atualizado em <b>' + g.toLocaleDateString('pt-BR') + ' ' + g.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}) + '</b><br>' + nf(D.geral.aplicaveis) + ' atividades · ' + D.geral.clinicas_total + ' clínicas';
+  $('#snap').innerHTML = 'Atualizado em <b>' + g.toLocaleDateString('pt-BR') + ' ' + g.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}) + '</b>';
   $('#f2').textContent = 'SNAPSHOT ' + g.toLocaleDateString('pt-BR') + ' · FONTE: ' + String(D.fonte).toUpperCase();
   window.scrollTo(0, 0);
 }

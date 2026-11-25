@@ -322,7 +322,9 @@ function viewC(c) {
   };
   const cont = sts => { const v = sts.filter(x => x !== 'NA'); return [v.filter(Boolean).length, v.length]; };
   const gi = c.int || {status: [], previsto: null}, ge = c.ev || {status: [], previsto: null};
-  const nInt = cont(gi.status), nEv = cont(ge.status);
+  const nInt = cont(gi.status);
+  const co = c.org || null, orgFeita = !!co && co.n > 0 && co.feitas >= co.n;
+  const nEv = (() => { const b = cont(ge.status); return co && co.n > 0 ? [b[0] + (orgFeita ? 1 : 0), b[1] + 1] : b; })();
   let titulo = 'Execução', itens;
   if (abaC === 'int' && ex.internas.length) {
     titulo = 'Atividades internas';
@@ -331,7 +333,14 @@ function viewC(c) {
     titulo = 'Evidências';
     const feito = nEv[1] > 0 && nEv[0] === nEv[1];      // o check do grupo só vem quando todas as evidências estão feitas
     const pai = `<div class="it pai ${feito ? 'ok' : 'pd'}"><span class="dot"></span><span class="n"></span><span class="tx">Evidências<span class="cnt">${nEv[0]}/${nEv[1]}</span></span><span class="pv"></span><span class="dt">${feito ? 'completas' : 'pendente'}</span></div>`;
-    itens = pai + ex.evidencias.map((a, i) => linha('', a.texto, ge.previsto && ge.previsto[i], ge.status[i], ' sub')).join('');
+    itens = pai + ex.evidencias.map((a, i) => {
+      if (a.org) {   // Organização: uma por visita; mostra x/N e a data da organização mais recente
+        if (!co) return '';
+        const k = orgFeita ? 'ok' : 'pd';
+        return `<div class="it ${k} sub"><span class="dot"></span><span class="n"></span><span class="tx">${esc(a.texto)}<span class="cnt">${co.feitas}/${co.n}</span></span><span class="pv"></span><span class="dt">${co.ultima ? fD(co.ultima) : 'pendente'}</span></div>`;
+      }
+      return linha('', a.texto, ge.previsto && ge.previsto[i], ge.status[i], ' sub');
+    }).join('');
   } else {
     abaC = 'exec';
     itens = D.atividades.map((a, i) => linha(a.n, a.texto, c.previsto && c.previsto[i], c.status[i])).join('');

@@ -40,6 +40,10 @@ main{flex:1}
 .kpi .tr{height:8px;background:var(--trk);border-radius:4px;margin-top:10px;overflow:hidden}
 .kpi.fase{padding:24px 26px 22px}
 .kpi.fase .arrows{display:flex}
+.fbar{position:relative;margin-top:6px}
+.fbar .bt,.fbar .bt.dual{height:34px;border-radius:8px}
+.fbar .bt.dual i,.fbar .bt i{border-radius:8px}
+.fbar .fin{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-weight:700;font-size:15px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55);pointer-events:none;z-index:3}
 .kpi.fase .ar{height:46px;font-size:17px}
 .kpi.fase .wk{height:20px}
 .kpi.fase .l{font-size:14px;color:var(--ink);font-weight:700}
@@ -288,7 +292,7 @@ function kpiG() {
   const setas = nos.map((o, i) => `<div class="fs"><span class="ar ${o.conc >= o.ap ? 'done' : (o === oa ? 'cur' : 'fut')}${i === 0 ? ' f' : ''}" title="${esc(o.nome)}">${esc(o.nome)}</span></div>`).join('');
   const sem = tarefasSemana(), ult = ultimasTarefas(), temCrono = D.clinicas.some(c => c.previsto);
   return `<section class="kpis">
-  <div class="kpi fase"><div class="l" style="margin:0 0 8px">Fase do projeto${oa ? ' · ' + esc(oa.nome) : ''}${oa ? ' <b class="sx">' + esc(semanaTxt(oa, origemSem, fimProjSem)) + '</b>' : ''}</div><div class="arrows">${setas}</div>${oa ? blocosHtml(oa, origemSem, fimProjSem) : ''}<div class="nt">Cada bloco representa uma semana.</div><div class="pr"><div><small>Prev.</small><b>${oa && oa.esp !== null ? P(oa.esp) + '%' : '—'}</b></div><div><small>Real</small><b>${oa ? P(oa.pct) + '%' : '—'}</b></div></div></div>
+  <div class="kpi fase"><div class="l" style="margin:0 0 8px">Fase do projeto${oa ? ' · ' + esc(oa.nome) : ''}${oa ? ' <b class="sx">' + esc(semanaTxt(oa, origemSem, fimProjSem)) + '</b>' : ''}</div>${oa ? `<div class="fbar">${barra(oa.pct, oa.esp)}<span class="fin">${esc(oa.nome)}</span></div>` : ''}<div class="pr"><div><small>Prev.</small><b>${oa && oa.esp !== null ? P(oa.esp) + '%' : '—'}</b></div><div><small>Real</small><b>${oa ? P(oa.pct) + '%' : '—'}</b></div></div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
   <div class="kpi"><div class="v">${temCrono ? nf(sem.t) : '—'}</div><div class="l">${temCrono ? 'Próximas tarefas agendadas · ' + nf(sem.x) + ' executadas de ' + nf(sem.t) + ' · até ' + fDC(sem.fim) : 'Próximas tarefas agendadas · cronograma ainda não preenchido'}</div></div>
   <div class="kpi"><div class="v">${ult ? nf(ult.n) : '—'}</div><div class="l">${ult ? 'Últimas tarefas executadas · ' + fD(ult.data) + ' · ' + nf(ult.sem) + ' nos últimos 7 dias' : 'Últimas tarefas · nenhuma executada ainda'}</div></div>

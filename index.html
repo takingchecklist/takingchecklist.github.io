@@ -40,7 +40,7 @@ main{flex:1}
 .kpi .tr{height:8px;background:var(--trk);border-radius:4px;margin-top:10px;overflow:hidden}
 .kpi.fase .arrows{display:flex}
 .fs{flex:1;min-width:0;margin-right:-5px}
-.wks{display:flex;gap:3px;margin:5px 9px 0 0}
+.wks{display:flex;gap:3px;margin:6px 0 0 0}
 .wk{flex:1;height:12px;border-radius:2px;border:1px solid #C9CED6;background:#fff;position:relative;overflow:hidden}
 .wk i{position:absolute;left:0;bottom:0;height:4px;background:var(--verde)}
 .wk.late{border-color:var(--red)}
@@ -259,11 +259,11 @@ function kpiG() {
   const nos = ondas().filter(o => /^\d/.test(o.nome) && o.ap > 0).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', {numeric: true}));
   const oa = nos.find(o => o.conc < o.ap) || nos[nos.length - 1] || null;
   const origemSem = nos.map(o => o.inicio).filter(Boolean).sort()[0], fimProjSem = nos.map(o => o.prazo).filter(Boolean).sort().pop();
-  const setas = nos.map((o, i) => `<div class="fs"><span class="ar ${o.conc >= o.ap ? 'done' : (o === oa ? 'cur' : 'fut')}${i === 0 ? ' f' : ''}" title="${esc(o.nome)}">${i + 1}</span>${blocosHtml(o, origemSem, fimProjSem)}</div>`).join('');
+  const setas = nos.map((o, i) => `<div class="fs"><span class="ar ${o.conc >= o.ap ? 'done' : (o === oa ? 'cur' : 'fut')}${i === 0 ? ' f' : ''}" title="${esc(o.nome)}">${i + 1}</span></div>`).join('');
   const sem = tarefasSemana(), ult = ultimasTarefas(), temCrono = D.clinicas.some(c => c.previsto);
   return `<section class="kpis">
   <div class="kpi"><div class="v o">${P(g.pct)}%</div><div class="l">Evolução do projeto${e === null ? '' : ' · esperado da semana ' + P(e) + '%'}</div>${e === null ? `<div class="tr"><div class="bt" style="height:8px"><i style="width:${P(g.pct)}%"></i></div></div>` : `<div style="margin-top:10px">${barra(g.pct, e).replace('class="bt dual"', 'class="bt dual" style="height:8px"')}</div>`}</div>
-  <div class="kpi fase"><div class="l" style="margin:0 0 8px">Fase do projeto${oa ? ' · ' + esc(oa.nome) : ''}</div><div class="arrows">${setas}</div><div class="nt">Cada bloco é uma semana do cronograma: fica laranja conforme os dias passam; a faixa verde mostra as tarefas da semana já executadas. Borda vermelha: semana vencida com pendência.</div><div class="pr"><div><small>Prev.</small><b>${oa && oa.esp !== null ? P(oa.esp) + '%' : '—'}</b></div><div><small>Real</small><b>${oa ? P(oa.pct) + '%' : '—'}</b></div></div></div>
+  <div class="kpi fase"><div class="l" style="margin:0 0 8px">Fase do projeto${oa ? ' · ' + esc(oa.nome) : ''}</div><div class="arrows">${setas}</div>${oa ? blocosHtml(oa, origemSem, fimProjSem) : ''}<div class="nt">Cada bloco é uma semana do cronograma: fica laranja conforme os dias passam; a faixa verde mostra as tarefas da semana já executadas. Borda vermelha: semana vencida com pendência.</div><div class="pr"><div><small>Prev.</small><b>${oa && oa.esp !== null ? P(oa.esp) + '%' : '—'}</b></div><div><small>Real</small><b>${oa ? P(oa.pct) + '%' : '—'}</b></div></div></div>
   <div class="kpi"><div class="v">${g.clinicas_concluidas}</div><div class="l">Clínicas 100% concluídas de ${g.clinicas_total}</div></div>
   <div class="kpi"><div class="v">${temCrono ? nf(sem.t) : '—'}</div><div class="l">${temCrono ? 'Próximas tarefas agendadas · ' + nf(sem.x) + ' executadas de ' + nf(sem.t) + ' · até ' + fDC(sem.fim) : 'Próximas tarefas agendadas · cronograma ainda não preenchido'}</div></div>
   <div class="kpi"><div class="v">${ult ? nf(ult.n) : '—'}</div><div class="l">${ult ? 'Últimas tarefas executadas · ' + fD(ult.data) + ' · ' + nf(ult.sem) + ' nos últimos 7 dias' : 'Últimas tarefas · nenhuma executada ainda'}</div></div>

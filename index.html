@@ -247,18 +247,19 @@ function rota() {
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 function isoDia(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
-// Tarefas agendadas na semana (de hoje até hoje+6) e quantas dessas já foram executadas
+// Próxima data agendada: a menor data prevista de hoje em diante com tarefa ainda não executada, e quantas tarefas caem nela
 function tarefasSemana() {
-  const a = isoDia(new Date()), b = hojeISO(); let t = 0, x = 0;
+  const a = isoDia(new Date()), por = {};
   D.clinicas.forEach(c => {
     if (!c.previsto) return;
     D.atividades.forEach((_, i) => {
       const d = c.previsto[i], s = c.status[i];
-      if (!d || s === 'NA' || d < a || d > b) return;
-      t++; if (s) x++;
+      if (!d || s || d < a) return;           // sem data, já executada/N-A ou no passado
+      por[d] = (por[d] || 0) + 1;
     });
   });
-  return {t, x, fim: b};
+  const datas = Object.keys(por).sort();
+  return datas.length ? {data: datas[0], t: por[datas[0]]} : {data: null, t: 0};
 }
 // Últimas tarefas executadas: data mais recente, quantas nesse dia e quantas nos últimos 7 dias
 // Todas as tarefas já executadas (Execução, Internas e Evidências) com a data lançada no Excel
@@ -290,7 +291,7 @@ function abrirUltimas() {
   const corpo = dias.map(g => `<div class="pg"><div class="ph">${esc(fD(g.d))}<span>${g.l.length} ${g.l.length === 1 ? 'tarefa' : 'tarefas'}</span></div>${g.l.map(r => `<div class="pi"><b>${esc(r.c)}</b><span>${esc(r.a)}</span><em>${esc(r.t)}</em></div>`).join('')}</div>`).join('');
   let el = document.getElementById('pop'); if (el) el.remove();
   el = document.createElement('div'); el.id = 'pop'; el.className = 'pop';
-  el.innerHTML = `<div class="pbox" role="dialog" aria-modal="true" aria-label="Últimas tarefas executadas"><div class="pt"><b>Últimas tarefas executadas</b><span>${nf(rows.length)} no total</span><button type="button" class="px" aria-label="Fechar">×</button></div><div class="pb">${corpo || '<div class="pi">Nenhuma tarefa executada ainda.</div>'}</div></div>`;
+  el.innerHTML = `<div class="pbox" role="dialog" aria-modal="true" aria-label="Últimas tarefas executadas"><div class="pt"><b>Últimas tarefas executadas</b><span>${nf(rows.length)} ${rows.length === 1 ? 'tarefa' : 'tarefas'}${ultima ? ' em ' + esc(fD(ultima)) : ''}</span><button type="button" class="px" aria-label="Fechar">×</button></div><div class="pb">${corpo || '<div class="pi">Nenhuma tarefa executada ainda.</div>'}</div></div>`;
   el.addEventListener('click', e => { if (e.target === el || e.target.classList.contains('px')) fecharPop(); });
   document.body.appendChild(el);
   el.querySelector('.px').focus();
@@ -360,7 +361,7 @@ function kpiG() {
   return `<section class="kpis">
   <div class="kpi fase"><div class="k">Evolução do projeto</div><div class="setas" title="Realizado ${P(real)}%${prev === null ? '' : ' · Previsto ' + P(prev) + '%'}">${setas}</div><div class="pr"><div><small>Prev.</small><b>${prev !== null ? P(prev) + '%' : '—'}</b></div><div><small>Real</small><b>${P(real)}%</b></div></div></div>
   <div class="kpi"><div class="k">Clínicas concluídas</div><div class="v">${g.clinicas_concluidas}<small>de ${g.clinicas_total}</small></div></div>
-  <div class="kpi"><div class="k">Tarefas agendadas · próximos 7 dias</div>${temCrono ? `<div class="v">${nf(sem.t)}</div>` : '<div class="v">—</div><div class="s">cronograma ainda não preenchido</div>'}</div>
+  <div class="kpi"><div class="k">Próximas tarefas agendadas</div>${temCrono ? (sem.data ? `<div class="v">${nf(sem.t)}<small>em ${fD(sem.data)}</small></div>` : '<div class="v">—</div><div class="s">nenhuma tarefa agendada pendente</div>') :'<div class="v">—</div><div class="s">cronograma ainda não preenchido</div>'}</div>
   <div class="kpi${ult ? ' click' : ''}"${ult ? ' role="button" tabindex="0" onclick="abrirUltimas()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();abrirUltimas()}"' : ''}><div class="k">Últimas tarefas executadas</div>${ult ? `<div class="v">${nf(ult.n)}<small>em ${fD(ult.data)}</small></div><div class="s ver">Ver lista ›</div>` : '<div class="v">—</div><div class="s">nenhuma executada ainda</div>'}</div>
   </section>`;
 }

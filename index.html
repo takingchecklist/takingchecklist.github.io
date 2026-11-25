@@ -89,7 +89,8 @@ body.pdf .pop{display:none}
 .ph span{color:var(--lbl);font-weight:600}
 .pi{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--cardln);font-size:13px}
 .pi b{flex:0 0 38%;color:var(--ink)}
-.pi span{color:var(--lbl)}
+.pi span{color:var(--lbl);flex:1}
+.pi em{font-style:normal;font-size:11px;color:var(--lbl);background:var(--card);border-radius:10px;padding:1px 8px;align-self:center;white-space:nowrap}
 .blk{padding:22px 42px 26px}
 h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
 h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--orange)}
@@ -260,9 +261,19 @@ function tarefasSemana() {
   return {t, x, fim: b};
 }
 // Últimas tarefas executadas: data mais recente, quantas nesse dia e quantas nos últimos 7 dias
+// Todas as tarefas já executadas (Execução, Internas e Evidências) com a data lançada no Excel
+function listaFeitas() {
+  const rows = [], ex = D.extras || {internas: [], evidencias: []};
+  D.clinicas.forEach(c => {
+    c.status.forEach((s, i) => { if (s && s !== 'NA') rows.push({d: s, c: c.nome, a: (D.atividades[i] || {}).texto || '', t: 'Execução'}); });
+    ((c.int || {}).status || []).forEach((s, i) => { if (s && s !== 'NA') rows.push({d: s, c: c.nome, a: (ex.internas[i] || {}).texto || '', t: 'Interna'}); });
+    ((c.ev || {}).status || []).forEach((s, i) => { if (s && s !== 'NA') rows.push({d: s, c: c.nome, a: (ex.evidencias[i] || {}).texto || '', t: 'Evidência'}); });
+    if (c.org && c.org.feitas > 0 && c.org.ultima) rows.push({d: c.org.ultima, c: c.nome, a: 'Organização (' + c.org.feitas + ' de ' + c.org.n + ')', t: 'Evidência'});
+  });
+  return rows;
+}
 function ultimasTarefas() {
-  const datas = [];
-  D.clinicas.forEach(c => c.status.forEach(s => { if (s && s !== 'NA') datas.push(s); }));
+  const datas = listaFeitas().map(r => r.d);
   if (!datas.length) return null;
   const ult = datas.reduce((m, d) => d > m ? d : m);
   const h = new Date(); h.setDate(h.getDate() - 6); const ini = isoDia(h);
@@ -271,12 +282,11 @@ function ultimasTarefas() {
 
 // Pop-up com todas as tarefas já executadas, da data mais recente para a mais antiga
 function abrirUltimas() {
-  const rows = [];
-  D.clinicas.forEach(c => c.status.forEach((s, i) => { if (s && s !== 'NA') rows.push({d: s, c: c.nome, a: (D.atividades[i] || {}).texto || ''}); }));
+  const rows = listaFeitas();
   rows.sort((x, y) => y.d.localeCompare(x.d) || x.c.localeCompare(y.c, 'pt-BR') || x.a.localeCompare(y.a, 'pt-BR'));
   const dias = [];
   rows.forEach(r => { let g = dias[dias.length - 1]; if (!g || g.d !== r.d) { g = {d: r.d, l: []}; dias.push(g); } g.l.push(r); });
-  const corpo = dias.map(g => `<div class="pg"><div class="ph">${esc(fD(g.d))}<span>${g.l.length} ${g.l.length === 1 ? 'tarefa' : 'tarefas'}</span></div>${g.l.map(r => `<div class="pi"><b>${esc(r.c)}</b><span>${esc(r.a)}</span></div>`).join('')}</div>`).join('');
+  const corpo = dias.map(g => `<div class="pg"><div class="ph">${esc(fD(g.d))}<span>${g.l.length} ${g.l.length === 1 ? 'tarefa' : 'tarefas'}</span></div>${g.l.map(r => `<div class="pi"><b>${esc(r.c)}</b><span>${esc(r.a)}</span><em>${esc(r.t)}</em></div>`).join('')}</div>`).join('');
   let el = document.getElementById('pop'); if (el) el.remove();
   el = document.createElement('div'); el.id = 'pop'; el.className = 'pop';
   el.innerHTML = `<div class="pbox" role="dialog" aria-modal="true" aria-label="Últimas tarefas executadas"><div class="pt"><b>Últimas tarefas executadas</b><span>${nf(rows.length)} no total</span><button type="button" class="px" aria-label="Fechar">×</button></div><div class="pb">${corpo || '<div class="pi">Nenhuma tarefa executada ainda.</div>'}</div></div>`;

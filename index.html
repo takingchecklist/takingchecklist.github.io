@@ -282,7 +282,8 @@ function ultimasTarefas() {
 
 // Pop-up com todas as tarefas já executadas, da data mais recente para a mais antiga
 function abrirUltimas() {
-  const rows = listaFeitas();
+  const todas = listaFeitas(), ultima = todas.reduce((m, r) => r.d > m ? r.d : m, '');
+  const rows = todas.filter(r => r.d === ultima);   // só as tarefas da última data
   rows.sort((x, y) => y.d.localeCompare(x.d) || x.c.localeCompare(y.c, 'pt-BR') || x.a.localeCompare(y.a, 'pt-BR'));
   const dias = [];
   rows.forEach(r => { let g = dias[dias.length - 1]; if (!g || g.d !== r.d) { g = {d: r.d, l: []}; dias.push(g); } g.l.push(r); });

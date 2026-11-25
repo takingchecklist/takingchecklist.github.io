@@ -185,9 +185,17 @@ let D = null;
 // Esperado pelo cronograma: atividades com data prevista até hoje / atividades aplicáveis (a barra sobe no dia da data)
 // janela da semana: hoje + 6 dias (7 dias contando hoje). Atividade com data além disso ainda não entra no esperado.
 function hojeISO() { const h = new Date(); h.setDate(h.getDate() + 6); const p = n => String(n).padStart(2, '0'); return h.getFullYear() + '-' + p(h.getMonth() + 1) + '-' + p(h.getDate()); }
+// Esperado "blocado por semana": semanas do cronograma (a partir do início da 1ª onda, 7 dias cada). O esperado
+// inclui tudo que está previsto até o FIM da semana em que estamos e só sobe quando a próxima semana começa.
+function fimSemanaISO() {
+  const orig = ondas().filter(o => /^\d/.test(o.nome) && o.inicio).map(o => o.inicio).sort()[0];
+  if (!orig) return hojeISO();
+  const w = Math.floor(diasEntre(orig, isoDia(new Date())) / 7);   // antes da 1ª semana vale -1 (termina na véspera do início)
+  return addDias(orig, 7 * w + 6);
+}
 function espN(c) {
   const cr = c.previsto; if (!cr) return null;
-  const h = hojeISO(); let e = 0;
+  const h = fimSemanaISO(); let e = 0;
   D.atividades.forEach((a, i) => { if (c.status[i] !== 'NA' && cr[i] && cr[i] <= h) e++; });
   return e;
 }

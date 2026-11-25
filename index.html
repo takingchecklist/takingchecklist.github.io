@@ -73,6 +73,23 @@ main{flex:1}
 .kpi .k{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 8px}
 .kpi .v small{font-size:15px;font-weight:600;color:var(--lbl);margin-left:6px;letter-spacing:0}
 .kpi .s{font-size:12px;color:var(--lbl);margin-top:4px;line-height:1.4}
+.kpi.click{cursor:pointer}
+.kpi.click:hover{background:#fff}
+.kpi .s.ver{color:var(--orange2);font-weight:700}
+.pop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+body.pdf .pop{display:none}
+.pbox{background:#fff;border-radius:12px;width:min(560px,100%);max-height:min(80vh,640px);display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+.pt{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--cardln)}
+.pt b{font-size:16px;color:var(--ink)}
+.pt span{font-size:12px;color:var(--lbl);flex:1}
+.px{border:0;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:var(--lbl);padding:0 4px}
+.px:hover{color:var(--ink)}
+.pb{overflow:auto;padding:6px 18px 16px}
+.ph{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink);margin:14px 0 4px;padding-bottom:4px;border-bottom:2px solid var(--orange)}
+.ph span{color:var(--lbl);font-weight:600}
+.pi{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--cardln);font-size:13px}
+.pi b{flex:0 0 38%;color:var(--ink)}
+.pi span{color:var(--lbl)}
 .blk{padding:22px 42px 26px}
 h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
 h3::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--orange)}
@@ -252,6 +269,24 @@ function ultimasTarefas() {
   return {data: ult, n: datas.filter(d => d === ult).length, sem: datas.filter(d => d >= ini).length};
 }
 
+// Pop-up com todas as tarefas já executadas, da data mais recente para a mais antiga
+function abrirUltimas() {
+  const rows = [];
+  D.clinicas.forEach(c => c.status.forEach((s, i) => { if (s && s !== 'NA') rows.push({d: s, c: c.nome, a: (D.atividades[i] || {}).texto || ''}); }));
+  rows.sort((x, y) => y.d.localeCompare(x.d) || x.c.localeCompare(y.c, 'pt-BR') || x.a.localeCompare(y.a, 'pt-BR'));
+  const dias = [];
+  rows.forEach(r => { let g = dias[dias.length - 1]; if (!g || g.d !== r.d) { g = {d: r.d, l: []}; dias.push(g); } g.l.push(r); });
+  const corpo = dias.map(g => `<div class="pg"><div class="ph">${esc(fD(g.d))}<span>${g.l.length} ${g.l.length === 1 ? 'tarefa' : 'tarefas'}</span></div>${g.l.map(r => `<div class="pi"><b>${esc(r.c)}</b><span>${esc(r.a)}</span></div>`).join('')}</div>`).join('');
+  let el = document.getElementById('pop'); if (el) el.remove();
+  el = document.createElement('div'); el.id = 'pop'; el.className = 'pop';
+  el.innerHTML = `<div class="pbox" role="dialog" aria-modal="true" aria-label="Últimas tarefas executadas"><div class="pt"><b>Últimas tarefas executadas</b><span>${nf(rows.length)} no total</span><button type="button" class="px" aria-label="Fechar">×</button></div><div class="pb">${corpo || '<div class="pi">Nenhuma tarefa executada ainda.</div>'}</div></div>`;
+  el.addEventListener('click', e => { if (e.target === el || e.target.classList.contains('px')) fecharPop(); });
+  document.body.appendChild(el);
+  el.querySelector('.px').focus();
+}
+function fecharPop() { const el = document.getElementById('pop'); if (el) el.remove(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharPop(); });
+
 function addDias(iso, n) { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return isoDia(d); }
 // Semanas do calendário do cronograma (Semana 1 = início da 1ª onda, blocos de 7 dias até o prazo do projeto).
 // A fileira mostra só as semanas da onda atual. Estados do bloco:
@@ -315,7 +350,7 @@ function kpiG() {
   <div class="kpi fase"><div class="k">Evolução do projeto</div><div class="setas" title="Realizado ${P(real)}%${prev === null ? '' : ' · Previsto ' + P(prev) + '%'}">${setas}</div><div class="pr"><div><small>Prev.</small><b>${prev !== null ? P(prev) + '%' : '—'}</b></div><div><small>Real</small><b>${P(real)}%</b></div></div></div>
   <div class="kpi"><div class="k">Clínicas concluídas</div><div class="v">${g.clinicas_concluidas}<small>de ${g.clinicas_total}</small></div></div>
   <div class="kpi"><div class="k">Tarefas agendadas · próximos 7 dias</div>${temCrono ? `<div class="v">${nf(sem.t)}</div>` : '<div class="v">—</div><div class="s">cronograma ainda não preenchido</div>'}</div>
-  <div class="kpi"><div class="k">Últimas tarefas executadas</div>${ult ? `<div class="v">${nf(ult.n)}<small>em ${fD(ult.data)}</small></div>` : '<div class="v">—</div><div class="s">nenhuma executada ainda</div>'}</div>
+  <div class="kpi${ult ? ' click' : ''}"${ult ? ' role="button" tabindex="0" onclick="abrirUltimas()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();abrirUltimas()}"' : ''}><div class="k">Últimas tarefas executadas</div>${ult ? `<div class="v">${nf(ult.n)}<small>em ${fD(ult.data)}</small></div><div class="s ver">Ver lista ›</div>` : '<div class="v">—</div><div class="s">nenhuma executada ainda</div>'}</div>
   </section>`;
 }
 

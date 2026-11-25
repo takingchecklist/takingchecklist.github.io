@@ -315,7 +315,7 @@ function kpiG() {
   <div class="kpi fase"><div class="k">Evolução do projeto</div><div class="setas" title="Realizado ${P(real)}%${prev === null ? '' : ' · Previsto ' + P(prev) + '%'}">${setas}</div><div class="pr"><div><small>Prev.</small><b>${prev !== null ? P(prev) + '%' : '—'}</b></div><div><small>Real</small><b>${P(real)}%</b></div></div></div>
   <div class="kpi"><div class="k">Clínicas concluídas</div><div class="v">${g.clinicas_concluidas}<small>de ${g.clinicas_total}</small></div></div>
   <div class="kpi"><div class="k">Tarefas agendadas · próximos 7 dias</div>${temCrono ? `<div class="v">${nf(sem.t)}</div><div class="s">até ${fDC(sem.fim)}</div>` : '<div class="v">—</div><div class="s">cronograma ainda não preenchido</div>'}</div>
-  <div class="kpi"><div class="k">Últimas tarefas executadas</div>${ult ? `<div class="v">${nf(ult.n)}<small>em ${fD(ult.data)}</small></div><div class="s">${nf(ult.sem)} nos últimos 7 dias</div>` : '<div class="v">—</div><div class="s">nenhuma executada ainda</div>'}</div>
+  <div class="kpi"><div class="k">Últimas tarefas executadas</div>${ult ? `<div class="v">${nf(ult.n)}<small>em ${fD(ult.data)}</small></div>` : '<div class="v">—</div><div class="s">nenhuma executada ainda</div>'}</div>
   </section>`;
 }
 

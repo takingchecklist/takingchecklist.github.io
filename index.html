@@ -270,7 +270,7 @@ function blocosHtml(o, origem, fimProj) {
 function semanaTxt(o, origem, fimProj) {
   const inf = semanasInfo(o, origem, fimProj);
   if (!inf) return '';
-  return inf.pos === 0 ? 'começa em ' + fDC(inf.comeca) : `Semana ${inf.pos}/${inf.n}`;
+  return `Semana ${Math.max(1, inf.pos)}/${inf.n}`;
 }
 
 function kpiG() {

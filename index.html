@@ -263,14 +263,11 @@ function tarefasSemana() {
   return datas.length ? {data: datas[0], t: por[datas[0]].length, rows: por[datas[0]]} : {data: null, t: 0, rows: []};
 }
 // Últimas tarefas executadas: data mais recente, quantas nesse dia e quantas nos últimos 7 dias
-// Todas as tarefas já executadas (Execução, Internas e Evidências) com a data lançada no Excel
+// Só as tarefas de Execução já executadas, com a data lançada no Excel (Internas e Evidências ficam fora)
 function listaFeitas() {
-  const rows = [], ex = D.extras || {internas: [], evidencias: []};
+  const rows = [];
   D.clinicas.forEach(c => {
     c.status.forEach((s, i) => { if (s && s !== 'NA') rows.push({d: s, c: c.nome, a: (D.atividades[i] || {}).texto || '', t: 'Execução'}); });
-    ((c.int || {}).status || []).forEach((s, i) => { if (s && s !== 'NA') rows.push({d: s, c: c.nome, a: (ex.internas[i] || {}).texto || '', t: 'Interna'}); });
-    ((c.ev || {}).status || []).forEach((s, i) => { if (s && s !== 'NA') rows.push({d: s, c: c.nome, a: (ex.evidencias[i] || {}).texto || '', t: 'Evidência'}); });
-    if (c.org && c.org.feitas > 0 && c.org.ultima) rows.push({d: c.org.ultima, c: c.nome, a: 'Organização (' + c.org.feitas + ' de ' + c.org.n + ')', t: 'Evidência'});
   });
   return rows;
 }
@@ -279,18 +276,18 @@ function ultimasTarefas() {
   if (!datas.length) return null;
   const ult = datas.reduce((m, d) => d > m ? d : m);
   const h = new Date(); h.setDate(h.getDate() - 6); const ini = isoDia(h);
-  // previstas no cronograma para essa mesma data (Execução e Evidências com data prevista; as Internas não têm data no cronograma)
+  // tarefas de Execução previstas no cronograma para essa mesma data
   let prev = 0, feitas = 0;
   const conta = (previsto, status) => (previsto || []).forEach((p, i) => { const s = (status || [])[i]; if (p === ult && s !== 'NA') { prev++; if (s) feitas++; } });
-  D.clinicas.forEach(c => { conta(c.previsto, c.status); conta((c.ev || {}).previsto, (c.ev || {}).status); });
+  D.clinicas.forEach(c => { conta(c.previsto, c.status); });
   return {data: ult, n: datas.filter(d => d === ult).length, sem: datas.filter(d => d >= ini).length, prev, feitas};
 }
 
 // Pop-up genérico: lista de tarefas {d, c, a, t} (data, clínica, atividade, tipo) de uma única data
-function popLista(titulo, rows, vazio) {
+function popLista(titulo, rows, vazio, semTipo) {
   rows = [...rows].sort((x, y) => x.c.localeCompare(y.c, 'pt-BR') || x.a.localeCompare(y.a, 'pt-BR'));
   const data = rows.length ? rows[0].d : null, n = rows.length;
-  const corpo = rows.map(r => `<div class="pi"><b>${esc(r.c)}</b><span>${esc(r.a)}</span><em>${esc(r.t)}</em></div>`).join('');
+  const corpo = rows.map(r => `<div class="pi"><b>${esc(r.c)}</b><span>${esc(r.a)}</span>${semTipo ? '' : `<em>${esc(r.t)}</em>`}</div>`).join('');
   let el = document.getElementById('pop'); if (el) el.remove();
   el = document.createElement('div'); el.id = 'pop'; el.className = 'pop';
   el.innerHTML = `<div class="pbox" role="dialog" aria-modal="true" aria-label="${esc(titulo)}"><div class="pt"><b>${esc(titulo)}</b><span>${nf(n)} ${n === 1 ? 'tarefa' : 'tarefas'}${data ? ' em ' + esc(fD(data)) : ''}</span><button type="button" class="px" aria-label="Fechar">×</button></div><div class="pb">${corpo || '<div class="pi">' + esc(vazio) + '</div>'}</div></div>`;
@@ -301,7 +298,7 @@ function popLista(titulo, rows, vazio) {
 // Últimas executadas: só as tarefas da data mais recente
 function abrirUltimas() {
   const todas = listaFeitas(), ultima = todas.reduce((m, r) => r.d > m ? r.d : m, '');
-  popLista('Últimas tarefas executadas', todas.filter(r => r.d === ultima), 'Nenhuma tarefa executada ainda.');
+  popLista('Últimas tarefas executadas', todas.filter(r => r.d === ultima), 'Nenhuma tarefa executada ainda.', true);
 }
 // Próximas agendadas: as tarefas da data agendada mais próxima
 function abrirProximas() { popLista('Próximas tarefas agendadas', tarefasSemana().rows, 'Nenhuma tarefa agendada pendente.'); }
